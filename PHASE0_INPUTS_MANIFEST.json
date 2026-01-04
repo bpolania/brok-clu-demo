@@ -1,0 +1,109 @@
+{
+  "manifest_version": "1.0",
+  "phase": "0",
+  "phase_name": "Scope Lock and Inputs",
+  "repo": {
+    "name": "brok-clu-demo",
+    "visibility": "private",
+    "positioning": "Sealed runtime demo consuming Brok-CLU PoC v1 artifact"
+  },
+  "brok_clu_repo": {
+    "path": "../Brok-CLU",
+    "access": "read-only",
+    "status": "sealed"
+  },
+  "artifact": {
+    "id": "brok-clu-runtime-routing-poc-v1",
+    "version": "PoC v1",
+    "platform": "macos-arm64",
+    "sha256": "9f2c4a8d7e1b0c6a3d5e9a2f4c7b8e0d1a6c9e4b5f2a7d8c0e3b1a4f6"
+  },
+  "environment": {
+    "supported": {
+      "os": "macOS",
+      "architecture": "arm64",
+      "mode": "local"
+    },
+    "unsupported": [
+      "other operating systems",
+      "other architectures",
+      "containers",
+      "cloud deployment"
+    ]
+  },
+  "domain": {
+    "name": "Deterministic Command Routing",
+    "intents": [
+      "RESTART_SUBSYSTEM",
+      "STOP_SUBSYSTEM",
+      "STATUS_QUERY"
+    ],
+    "slots": {
+      "target": ["alpha", "beta", "gamma"],
+      "mode": ["graceful", "immediate"]
+    }
+  },
+  "io_contract": {
+    "input": {
+      "format": "UTF-8 text file",
+      "structure": "single line",
+      "cardinality": "one command per invocation"
+    },
+    "output": {
+      "accept": {
+        "status": "ACCEPT",
+        "fields": ["intent", "slots"]
+      },
+      "reject": {
+        "status": "REJECT",
+        "fields": ["reason"]
+      }
+    },
+    "guarantees": [
+      "no partial output",
+      "no best-effort parsing",
+      "binary ACCEPT/REJECT only"
+    ]
+  },
+  "execution_semantics": {
+    "real_actions": false,
+    "output_type": "declarative",
+    "execution_model": "atomic, stateless per invocation",
+    "side_effects": false
+  },
+  "examples": {
+    "directory": "examples/inputs",
+    "files": [
+      {
+        "filename": "accept_restart_alpha_1.txt",
+        "content": "restart alpha subsystem gracefully",
+        "expected_status": "ACCEPT",
+        "expected_intent": "RESTART_SUBSYSTEM"
+      },
+      {
+        "filename": "accept_restart_alpha_2.txt",
+        "content": "graceful restart of alpha",
+        "expected_status": "ACCEPT",
+        "expected_intent": "RESTART_SUBSYSTEM"
+      },
+      {
+        "filename": "accept_status_beta.txt",
+        "content": "status of beta",
+        "expected_status": "ACCEPT",
+        "expected_intent": "STATUS_QUERY"
+      },
+      {
+        "filename": "reject_grammar_1.txt",
+        "content": "restart subsystem now alpha",
+        "expected_status": "REJECT",
+        "reject_type": "grammar"
+      },
+      {
+        "filename": "reject_semantic_1.txt",
+        "content": "delete database gamma",
+        "expected_status": "REJECT",
+        "reject_type": "semantic"
+      }
+    ]
+  }
+}
