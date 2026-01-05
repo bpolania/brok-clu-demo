@@ -74,6 +74,22 @@ See `examples/inputs/` for the locked example input set:
 
 ---
 
+## Output Artifacts (Demo Layer)
+
+After successful execution via `./run.sh <input-file>`, output artifacts are written to:
+
+| File | Description |
+|------|-------------|
+| `artifacts/last_run/output.raw.kv` | Authoritative runtime output (key=value format, exact copy of stdout) |
+| `artifacts/last_run/output.derived.json` | Derived JSON representation (non-authoritative, for inspection only) |
+
+**Important:**
+- The `key=value` format in `output.raw.kv` is the authoritative runtime output.
+- The JSON in `output.derived.json` is derived strictly from the raw output and includes explicit markers (`"derived": true`, `"source_format": "key=value"`).
+- On execution failure, no derived JSON is produced.
+
+---
+
 ## Documentation
 
 - `PHASE0_SCOPE_LOCK.md` - Complete scope lock documentation

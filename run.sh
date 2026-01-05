@@ -6,6 +6,10 @@ MANIFEST="$BUNDLE_DIR/MANIFEST.txt"
 CHECKSUMS="$BUNDLE_DIR/SHA256SUMS"
 BINARY="$BUNDLE_DIR/bin/macos-arm64/cmd_interpreter"
 
+ARTIFACTS_DIR="artifacts/last_run"
+RAW_OUTPUT="$ARTIFACTS_DIR/output.raw.kv"
+DERIVED_OUTPUT="$ARTIFACTS_DIR/output.derived.json"
+
 STDOUT_TMP=""
 STDERR_TMP=""
 MANIFEST_TMP=""
@@ -84,17 +88,72 @@ fi
 
 # B) Controlled execution (verification passed)
 
+# Prepare artifacts directory
+mkdir -p "$ARTIFACTS_DIR"
+rm -f "$RAW_OUTPUT" "$DERIVED_OUTPUT" 2>/dev/null || true
+
 # Invoke cmd_interpreter with --input argument
 set +e
 "$BINARY" --input "$INPUT_FILE" >"$STDOUT_TMP" 2>"$STDERR_TMP"
 EXIT_CODE=$?
 set -e
 
+# Always capture raw output if stdout was emitted
+if [ -s "$STDOUT_TMP" ]; then
+    cp "$STDOUT_TMP" "$RAW_OUTPUT"
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
-    # Success: emit stdout exactly
+    # Success: emit stdout to console, generate derived JSON
     cat "$STDOUT_TMP"
+
+    # Generate derived JSON from raw output (only on success)
+    awk '
+    BEGIN {
+        print "{"
+        print "  \"derived\": true,"
+        print "  \"source_format\": \"key=value\","
+        print "  \"kv\": {"
+        first = 1
+    }
+    /=/ {
+        # Remove single trailing \r from line (CRLF handling)
+        sub(/\r$/, "")
+        # Split on first = only
+        idx = index($0, "=")
+        if (idx > 0) {
+            key = substr($0, 1, idx - 1)
+            val = substr($0, idx + 1)
+            # Escape backslashes and quotes for JSON
+            gsub(/\\/, "\\\\", key)
+            gsub(/"/, "\\\"", key)
+            gsub(/\\/, "\\\\", val)
+            gsub(/"/, "\\\"", val)
+            # Store in array (last occurrence wins for duplicates)
+            keys[key] = val
+            if (!(key in order)) {
+                order[key] = ++count
+            }
+        }
+    }
+    END {
+        # Output in insertion order
+        for (i = 1; i <= count; i++) {
+            for (k in order) {
+                if (order[k] == i) {
+                    if (!first) print ","
+                    first = 0
+                    printf "    \"%s\": \"%s\"", k, keys[k]
+                }
+            }
+        }
+        if (count > 0) print ""
+        print "  }"
+        print "}"
+    }
+    ' "$RAW_OUTPUT" > "$DERIVED_OUTPUT"
 else
-    # Failure: surface stderr, do not emit stdout
+    # Failure: surface stderr, do not emit stdout, no derived output
     cat "$STDERR_TMP" >&2
     exit $EXIT_CODE
 fi
