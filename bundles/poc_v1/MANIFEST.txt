@@ -1,0 +1,2 @@
+bin/macos-arm64/cmd_interpreter
+VERSION.txt

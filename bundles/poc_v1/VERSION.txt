@@ -1,0 +1,3 @@
+poc_version=1
+git_sha=f930e0b104f91ef7685d193a5bb0fde951186028
+build_profile=macos-arm64
