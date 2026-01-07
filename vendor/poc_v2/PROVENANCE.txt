@@ -1,0 +1,7 @@
+Artifact name: PoC v2 Standalone Demo Bundle
+Artifact identifier (release tag / build id / filename): poc_v2-standalone-1.0
+Source (where the artifact came from): Brok-CLU main repo /dist
+Date received: 2026-01-07
+Vendored date (today): 2026-01-07
+Vendored by: bpolania
+Notes: Stored as upstream artifact, not extracted. No execution performed.
