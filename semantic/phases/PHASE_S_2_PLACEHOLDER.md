@@ -1,4 +1,4 @@
-# Phase S-2: Signature Extraction & Comparison
+# Phase S-2: Curated Product Demonstration
 
 **Status:** NOT STARTED
 
@@ -6,9 +6,9 @@
 
 ## Description
 
-Phase S-2 will implement mechanical signature extraction from `stdout.raw.kv` and equivalence comparison logic. Signatures will be derived using a small, explicitly defined subset of keys with exact string matching—no normalization or inference. The full `stdout.raw.kv` will always be preserved as the authoritative output.
+Phase S-2 presents illustrative semantic capabilities for product understanding. This phase operates strictly under the constraints defined in Phase S-0 and cannot weaken those constraints.
 
-This phase executes under the constraints defined in Phase S-0 and cannot weaken those constraints. Semantic equivalence is layer-owned and non-authoritative; mismatches are language design outcomes, not runtime defects.
+All presentation is bounded and illustrative. No claims of general language understanding, paraphrase completeness, or production readiness are permitted. Derived views are explicitly non-authoritative.
 
 ---
 

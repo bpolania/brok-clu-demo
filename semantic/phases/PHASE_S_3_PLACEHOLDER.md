@@ -1,4 +1,4 @@
-# Phase S-3: Presentation & Summary
+# Phase S-3: Optional Semantic Regression Gate
 
 **Status:** NOT STARTED
 
@@ -6,9 +6,9 @@
 
 ## Description
 
-Phase S-3 will produce audit-grade summaries and PASS/FAIL results for the semantic capability demonstration. Presentation will be factual and narrow, favoring auditability over flash. All summaries are derived views and explicitly non-authoritative; the underlying `stdout.raw.kv` outputs remain the sole source of truth.
+Phase S-3 is an optional regression gate for semantic consistency. This phase operates strictly under the constraints defined in Phase S-0 and cannot weaken those constraints.
 
-This phase executes under the constraints defined in Phase S-0 and cannot weaken those constraints. Non-claims must be preserved in all presentation materials—no implication of general language understanding, paraphrase completeness, or production readiness.
+If implemented, this phase provides a mechanism to detect semantic drift across runs. All checks are layer-owned and non-authoritative. No claims of general language understanding or production readiness are permitted.
 
 ---
 
@@ -18,4 +18,4 @@ This phase is governed by: **[Phase S-0: Scope Lock & Contract Definition](../co
 
 ---
 
-*Placeholder — implementation pending*
+*Placeholder — implementation pending (optional phase)*

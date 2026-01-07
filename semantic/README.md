@@ -62,9 +62,9 @@ All phases execute under S-0 constraints and cannot weaken them.
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
 | S-0 | Scope Lock & Contract Definition | **LOCKED** | Defines constraints, non-claims, and contract for all semantic phases |
-| S-1 | Input Suite & Equivalence Classes | NOT STARTED | Creates frozen input suite grouped into semantic equivalence classes |
-| S-2 | Signature Extraction & Comparison | NOT STARTED | Implements mechanical signature extraction and equivalence comparison |
-| S-3 | Presentation & Summary | NOT STARTED | Produces audit-grade summaries and PASS/FAIL results |
+| S-1 | Semantic Suite Execution | NOT STARTED | Execute frozen input suite against PoC v2, capture outputs |
+| S-2 | Curated Product Demonstration | NOT STARTED | Present illustrative semantic capabilities for product understanding |
+| S-3 | Optional Semantic Regression Gate | NOT STARTED | Optional regression gate for semantic consistency (future) |
 
 ---
 
@@ -76,9 +76,9 @@ semantic/
 ├── contract/
 │   └── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
 └── phases/
-    ├── PHASE_S_1_PLACEHOLDER.md      # Input suite phase (not started)
-    ├── PHASE_S_2_PLACEHOLDER.md      # Signature extraction phase (not started)
-    └── PHASE_S_3_PLACEHOLDER.md      # Presentation phase (not started)
+    ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (not started)
+    ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (not started)
+    └── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (not started)
 ```
 
 ---
