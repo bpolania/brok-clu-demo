@@ -1,0 +1,25 @@
+# SES_001: Restart Alpha Paraphrase Set
+#
+# Semantic Equivalence Set for demonstrating paraphrase collapse.
+# All inputs in this set express the same intent (RESTART_SUBSYSTEM)
+# with the same target (alpha) and mode (graceful).
+#
+# This is an ILLUSTRATIVE, BOUNDED, CURATED set.
+# No claims of completeness or general language understanding.
+
+id: SES_001
+title: "Restart Alpha Graceful - Paraphrase Set"
+description: |
+  Demonstrates that multiple surface forms expressing the same semantic
+  intent produce identical authoritative outputs from PoC v2.
+
+  Expected behavior: All inputs should yield byte-identical stdout.raw.kv
+  if the compiled language correctly collapses paraphrases.
+
+  NOTE: This is a derived, non-authoritative classification.
+  Authoritative output is stdout.raw.kv only.
+
+inputs:
+  - "restart alpha subsystem gracefully"
+  - "graceful restart of alpha"
+  - "please restart the alpha subsystem in graceful mode"
