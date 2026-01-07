@@ -15,7 +15,7 @@
 | SES ID | SES_001 |
 | Title | Restart Alpha Graceful - Paraphrase Set |
 | Input Count | 3 |
-| Suite Run | 20260107T222101Z |
+| Suite Run | 20260107T231002Z |
 
 ## Description
 
@@ -53,5 +53,5 @@ Inputs produced differing `stdout.raw.kv` outputs.
 
 ---
 
-*Generated: 20260107T222101Z*
+*Generated: 20260107T231002Z*
 *Phase S-1 Semantic Suite Execution*

@@ -4,8 +4,8 @@
 ses_id: SES_001
 input_index: 3
 input_string: please restart the alpha subsystem in graceful mode
-runtime_run_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T222106Z
+runtime_run_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T231007Z
 authoritative_output: stdout.raw.kv
 verification_exit_code: 0
 execution_exit_code: 0
-suite_run_timestamp: 20260107T222101Z
+suite_run_timestamp: 20260107T231002Z
