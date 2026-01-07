@@ -63,7 +63,7 @@ All phases execute under S-0 constraints and cannot weaken them.
 |-------|------|--------|-------------|
 | S-0 | Scope Lock & Contract Definition | **LOCKED** | Defines constraints, non-claims, and contract for all semantic phases |
 | S-1 | Semantic Suite Execution | **COMPLETE** | Execute frozen input suite against PoC v2, capture outputs |
-| S-2 | Curated Product Demonstration | NOT STARTED | Present illustrative semantic capabilities for product understanding |
+| S-2 | Curated Product Demonstration | **COMPLETE** | Present illustrative semantic capabilities for product understanding |
 | S-3 | Optional Semantic Regression Gate | NOT STARTED | Optional regression gate for semantic consistency (future) |
 
 ---
@@ -77,7 +77,7 @@ semantic/
 │   └── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
 ├── phases/
 │   ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (complete)
-│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (not started)
+│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (complete)
 │   └── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (not started)
 ├── suites/
 │   └── SES_001_restart_alpha.yaml    # SES definitions
@@ -88,9 +88,16 @@ semantic/
 │   └── ses_001/
 │       ├── execution_index.md
 │       └── runs/input_*/runtime_ref.txt
+├── demo/                             # Phase S-2 curated demonstration
+│   ├── DEMO_SET.yaml                 # Curated input set definition
+│   ├── PRODUCT_DEMO.md               # Product-facing narrative
+│   ├── explanations/                 # Per-input explanation pages
+│   └── runs/INDEX.md                 # Demo run index
 └── evidence/
-    └── phase_s_1/
-        └── PHASE_S_1_CLOSURE.md      # Phase S-1 closure attestation
+    ├── phase_s_1/
+    │   └── PHASE_S_1_CLOSURE.md      # Phase S-1 closure attestation
+    └── phase_s_2/
+        └── PHASE_S_2_CLOSURE.md      # Phase S-2 closure attestation
 ```
 
 ---
