@@ -256,7 +256,25 @@ These non-claims are binding and must be preserved in all documentation and pres
 
 ---
 
-## 15. Contract Finality
+## 15. Frozen Phase Structure
+
+The Semantic Capability Layer consists of the following phases:
+
+| Phase | Name | Description |
+|-------|------|-------------|
+| S-0 | Scope Lock & Contract Definition | This document; defines constraints and contract |
+| S-1 | Semantic Suite Execution | Execute frozen input suite against PoC v2, capture outputs |
+| S-2 | Curated Product Demonstration | Present illustrative semantic capabilities for product understanding |
+| S-3 | Optional Semantic Regression Gate | Optional regression gate for semantic consistency (future) |
+
+These phase names and structure are frozen. Subsequent phases execute under S-0 constraints and cannot:
+- Rename phases
+- Add phases without explicit contract amendment
+- Weaken S-0 constraints
+
+---
+
+## 16. Contract Finality
 
 This document is:
 - **Authoritative** — it defines the scope for all Semantic Layer phases
