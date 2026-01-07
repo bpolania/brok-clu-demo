@@ -27,7 +27,14 @@ trap cleanup EXIT
 
 fail_verification() {
     echo "VERIFICATION FAILED: $1" >&2
-    exit 1
+    # Write sentinel output to indicate verification was required
+    mkdir -p "$ARTIFACTS_DIR"
+    cat > "$RAW_OUTPUT" << 'SENTINEL'
+status=VERIFY_REQUIRED
+intent_id=-1
+n_slots=0
+SENTINEL
+    exit 10
 }
 
 fail_usage() {
