@@ -1,0 +1,3 @@
+# Override parent gitignore for semantic artifacts
+# Semantic artifacts are derived but tracked for attestation
+!artifacts/
