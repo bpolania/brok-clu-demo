@@ -1,0 +1,1052 @@
+     1	+ echo ==============================================
+     2	==============================================
+     3	+ echo 'PHASE V2-7 FINAL VALIDATION'
+     4	PHASE V2-7 FINAL VALIDATION
+     5	+ echo ==============================================
+     6	==============================================
+     7	+ echo ''
+     8	
+     9	++ date -u +%Y-%m-%dT%H:%M:%SZ
+    10	+ echo 'Timestamp: 2026-01-07T18:33:10Z'
+    11	Timestamp: 2026-01-07T18:33:10Z
+    12	+ echo ''
+    13	
+    14	+ REPO_ROOT=/Users/bpolania/Documents/GitHub/brok-clu-demo
+    15	+ cd /Users/bpolania/Documents/GitHub/brok-clu-demo
+    16	+ echo ==============================================
+    17	==============================================
+    18	+ echo 'A) FRESH CLONE SANITY'
+    19	A) FRESH CLONE SANITY
+    20	+ echo ==============================================
+    21	==============================================
+    22	+ echo ''
+    23	
+    24	+ echo '--- A.1: Current repo root ---'
+    25	--- A.1: Current repo root ---
+    26	+ git rev-parse --show-toplevel
+    27	/Users/bpolania/Documents/GitHub/brok-clu-demo
+    28	+ echo ''
+    29	
+    30	+ echo '--- A.2: Git status (should be clean except phase_v2_7 evidence) ---'
+    31	--- A.2: Git status (should be clean except phase_v2_7 evidence) ---
+    32	+ git status
+    33	On branch main
+    34	Your branch is up to date with 'origin/main'.
+    35	
+    36	Untracked files:
+    37	  (use "git add <file>..." to include in what will be committed)
+    38		evidence/phase_v2_7/
+    39	
+    40	nothing added to commit but untracked files present (use "git add" to track)
+    41	+ echo ''
+    42	
+    43	+ echo '--- A.3: Confirm vendored PoC v2 checksum ---'
+    44	--- A.3: Confirm vendored PoC v2 checksum ---
+    45	+ echo 'Recorded checksum location: vendor/poc_v2/SHA256SUMS.vendor'
+    46	Recorded checksum location: vendor/poc_v2/SHA256SUMS.vendor
+    47	+ cat vendor/poc_v2/SHA256SUMS.vendor
+    48	7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a  poc_v2.tar.gz
+    49	51fec5be8eea6fd1c8d689a5646c86b32e016d670ba20f1b70afe68f0c860f67  PROVENANCE.txt
+    50	+ echo ''
+    51	
+    52	+ echo '--- A.4: Compute actual checksum ---'
+    53	--- A.4: Compute actual checksum ---
+    54	+ shasum -a 256 vendor/poc_v2/poc_v2.tar.gz
+    55	7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a  vendor/poc_v2/poc_v2.tar.gz
+    56	+ echo ''
+    57	
+    58	+ echo '--- A.5: Verify checksum match ---'
+    59	--- A.5: Verify checksum match ---
+    60	++ grep poc_v2.tar.gz vendor/poc_v2/SHA256SUMS.vendor
+    61	++ cut '-d ' -f1
+    62	+ RECORDED=7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+    63	++ shasum -a 256 vendor/poc_v2/poc_v2.tar.gz
+    64	++ cut '-d ' -f1
+    65	+ ACTUAL=7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+    66	+ echo 'Recorded: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a'
+    67	Recorded: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+    68	+ echo 'Actual:   7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a'
+    69	Actual:   7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+    70	+ '[' 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a = 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a ']'
+    71	+ echo 'CHECKSUM: MATCH'
+    72	CHECKSUM: MATCH
+    73	+ echo ''
+    74	
+    75	+ echo ==============================================
+    76	==============================================
+    77	+ echo 'B) VERIFICATION PATH'
+    78	B) VERIFICATION PATH
+    79	+ echo ==============================================
+    80	==============================================
+    81	+ echo ''
+    82	
+    83	+ echo '--- B.1: Run wrapper verification ---'
+    84	--- B.1: Run wrapper verification ---
+    85	+ ./scripts/verify_poc_v2.sh
+    86	Tarball SHA-256 verified: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+    87	Extracting to: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183310Z/bundle_root
+    88	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183310Z/bundle_root/brok-clu-poc_v2-standalone
+    89	Verification entrypoint: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183310Z/bundle_root/brok-clu-poc_v2-standalone/scripts/verify.sh
+    90	Invoking PoC v2 verification...
+    91	
+    92	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T183310Z
+    93	
+    94	VERIFICATION PASSED
+    95	
+    96	PoC v2 Standalone Bundle Verification
+    97	======================================
+    98	
+    99	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183310Z/bundle_root/brok-clu-poc_v2-standalone
+   100	
+   101	Checking verification files...
+   102	Checking manifest files exist...
+   103	Verifying SHA256 checksums...
+   104	Checking required runtime files...
+   105	Checking executables...
+   106	Writing verification outputs...
+   107	
+   108	======================================
+   109	VERIFICATION PASSED
+   110	
+   111	Files verified: 19
+   112	Status: bundles/verified/verify.status.txt
+   113	Log:    bundles/verified/verify.log
+   114	======================================
+   115	+ VERIFY_EXIT=0
+   116	+ echo 'verify_poc_v2.sh exit code: 0'
+   117	verify_poc_v2.sh exit code: 0
+   118	+ echo ''
+   119	
+   120	+ echo '--- B.2: List verification artifacts ---'
+   121	--- B.2: List verification artifacts ---
+   122	+ ls -la artifacts/verify/
+   123	total 0
+   124	drwxr-xr-x@ 64 bpolania  staff  2048 Jan  7 12:33 .
+   125	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 10:37 ..
+   126	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 00:35 run_20260107T063526Z
+   127	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 00:35 run_20260107T063538Z
+   128	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 00:37 run_20260107T063731Z
+   129	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 00:48 run_20260107T064851Z
+   130	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 00:56 run_20260107T065608Z
+   131	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 01:05 run_20260107T070542Z
+   132	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 01:06 run_20260107T070622Z
+   133	drwxr-xr-x@  2 bpolania  staff    64 Jan  7 01:14 run_20260107T071407Z
+   134	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 01:14 run_20260107T071447Z
+   135	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 01:15 run_20260107T071459Z
+   136	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 01:23 run_20260107T072348Z
+   137	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 01:24 run_20260107T072403Z
+   138	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:04 run_20260107T150444Z
+   139	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:06 run_20260107T150634Z
+   140	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:07 run_20260107T150721Z
+   141	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:08 run_20260107T150801Z
+   142	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 09:08 run_20260107T150854Z
+   143	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:42 run_20260107T154228Z
+   144	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 09:50 run_20260107T155023Z
+   145	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:09 run_20260107T160930Z
+   146	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 10:10 run_20260107T161022Z
+   147	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:14 run_20260107T161422Z
+   148	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:25 run_20260107T162517Z
+   149	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 10:27 run_20260107T162751Z
+   150	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:37 run_20260107T163709Z
+   151	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:37 run_20260107T163711Z
+   152	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 10:37 run_20260107T163713Z
+   153	drwxr-xr-x@  6 bpolania  staff   192 Jan  7 10:37 run_20260107T163745Z
+   154	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171433Z
+   155	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171435Z
+   156	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171438Z
+   157	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171440Z
+   158	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171442Z
+   159	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171444Z
+   160	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171445Z
+   161	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171447Z
+   162	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171449Z
+   163	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171452Z
+   164	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:14 run_20260107T171454Z
+   165	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173432Z
+   166	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173434Z
+   167	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173437Z
+   168	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173439Z
+   169	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173441Z
+   170	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173443Z
+   171	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173445Z
+   172	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173447Z
+   173	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173449Z
+   174	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173451Z
+   175	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:34 run_20260107T173453Z
+   176	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174116Z
+   177	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174118Z
+   178	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174120Z
+   179	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174122Z
+   180	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174124Z
+   181	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174126Z
+   182	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174128Z
+   183	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174130Z
+   184	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174132Z
+   185	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174134Z
+   186	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 11:41 run_20260107T174136Z
+   187	drwxr-xr-x@  7 bpolania  staff   224 Jan  7 12:33 run_20260107T183310Z
+   188	+ echo ''
+   189	
+   190	+ echo ==============================================
+   191	==============================================
+   192	+ echo 'C) SINGLE-RUN EXECUTION'
+   193	C) SINGLE-RUN EXECUTION
+   194	+ echo ==============================================
+   195	==============================================
+   196	+ echo ''
+   197	
+   198	+ echo '--- C.1: Available input files ---'
+   199	--- C.1: Available input files ---
+   200	+ ls -la examples/inputs/
+   201	total 40
+   202	drwxr-xr-x@ 7 bpolania  staff  224 Jan  4 01:53 .
+   203	drwxr-xr-x@ 3 bpolania  staff   96 Jan  4 01:51 ..
+   204	-rw-------@ 1 bpolania  staff   35 Jan  4 01:53 accept_restart_alpha_1.txt
+   205	-rw-------@ 1 bpolania  staff   26 Jan  4 01:53 accept_restart_alpha_2.txt
+   206	-rw-------@ 1 bpolania  staff   15 Jan  4 01:53 accept_status_beta.txt
+   207	-rw-------@ 1 bpolania  staff   28 Jan  4 01:53 reject_grammar_1.txt
+   208	-rw-------@ 1 bpolania  staff   22 Jan  4 01:53 reject_semantic_1.txt
+   209	+ echo ''
+   210	
+   211	+ echo '--- C.2: Using input file ---'
+   212	--- C.2: Using input file ---
+   213	+ INPUT_FILE=/Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   214	+ echo 'Input: /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt'
+   215	Input: /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   216	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   217	restart alpha subsystem gracefully
+   218	+ echo ''
+   219	
+   220	+ echo '--- C.3: Run single execution ---'
+   221	--- C.3: Run single execution ---
+   222	+ ./scripts/run_poc_v2.sh --input /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   223	run_directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z
+   224	verification: invoking /Users/bpolania/Documents/GitHub/brok-clu-demo/scripts/verify_poc_v2.sh
+   225	verification: exit_code=0
+   226	execution: running bundle verify to set internal state
+   227	execution: run_entrypoint=scripts/run.sh
+   228	execution: invoking with input=/Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   229	execution: exit_code=0
+   230	+ RUN_EXIT=0
+   231	+ echo 'run_poc_v2.sh exit code: 0'
+   232	run_poc_v2.sh exit code: 0
+   233	+ echo ''
+   234	
+   235	+ echo '--- C.4: Latest run directory ---'
+   236	--- C.4: Latest run directory ---
+   237	++ ls -t artifacts/run
+   238	++ head -n 1
+   239	+ LATEST_RUN=run_20260107T183310Z
+   240	+ LATEST_RUN_DIR=/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z
+   241	+ echo 'Latest run: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z'
+   242	Latest run: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z
+   243	+ echo ''
+   244	
+   245	+ echo '--- C.5: Run directory contents ---'
+   246	--- C.5: Run directory contents ---
+   247	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z
+   248	total 40
+   249	drwxr-xr-x@  9 bpolania  staff   288 Jan  7 12:33 .
+   250	drwxr-xr-x@ 55 bpolania  staff  1760 Jan  7 12:33 ..
+   251	-rw-r--r--@  1 bpolania  staff   508 Jan  7 12:33 DERIVED_VIEW_NOTICE.txt
+   252	-rw-r--r--@  1 bpolania  staff   382 Jan  7 12:33 execution.meta.json
+   253	-rw-r--r--@  1 bpolania  staff     2 Jan  7 12:33 exit_code.txt
+   254	-rw-r--r--@  1 bpolania  staff     0 Jan  7 12:33 stderr.raw.txt
+   255	-rw-r--r--@  1 bpolania  staff  1970 Jan  7 12:33 stdout.derived.json
+   256	-rw-r--r--@  1 bpolania  staff   593 Jan  7 12:33 stdout.raw.kv
+   257	drwxr-xr-x@  5 bpolania  staff   160 Jan  7 12:33 verify
+   258	+ echo ''
+   259	
+   260	+ echo '--- C.6: Verification occurred first (verify subdirectory) ---'
+   261	--- C.6: Verification occurred first (verify subdirectory) ---
+   262	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z/verify/
+   263	total 16
+   264	drwxr-xr-x@ 5 bpolania  staff   160 Jan  7 12:33 .
+   265	drwxr-xr-x@ 9 bpolania  staff   288 Jan  7 12:33 ..
+   266	-rw-r--r--@ 1 bpolania  staff     2 Jan  7 12:33 exit_code.txt
+   267	-rw-r--r--@ 1 bpolania  staff     0 Jan  7 12:33 stderr.txt
+   268	-rw-r--r--@ 1 bpolania  staff  1305 Jan  7 12:33 stdout.txt
+   269	+ echo ''
+   270	
+   271	+ echo '--- C.7: exit_code.txt ---'
+   272	--- C.7: exit_code.txt ---
+   273	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z/exit_code.txt
+   274	0
+   275	+ echo ''
+   276	
+   277	+ echo ==============================================
+   278	==============================================
+   279	+ echo 'D) OUTPUT SEMANTICS'
+   280	D) OUTPUT SEMANTICS
+   281	+ echo ==============================================
+   282	==============================================
+   283	+ echo ''
+   284	
+   285	+ echo '--- D.1: stdout.raw.kv content ---'
+   286	--- D.1: stdout.raw.kv content ---
+   287	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z/stdout.raw.kv
+   288	PoC v2 Standalone - Run Mode (cmd_interpreter)
+   289	===============================================
+   290	
+   291	Input:  /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   292	Output: artifacts/runs/run_001
+   293	
+   294	Run complete.
+   295	
+   296	Artifacts:
+   297	  artifacts/runs/run_001/input.txt
+   298	  artifacts/runs/run_001/stdout.raw.kv
+   299	  artifacts/runs/run_001/stderr.txt
+   300	  artifacts/runs/run_001/exit_code.txt
+   301	  artifacts/runs/run_001/output.derived.json
+   302	
+   303	Exit code: 0
+   304	===============================================
+   305	
+   306	Authoritative output (key=value):
+   307	status=OK
+   308	intent_id=14
+   309	n_slots=0
+   310	dispatch=unknown
+   311	+ echo ''
+   312	
+   313	+ echo '--- D.2: DERIVED_VIEW_NOTICE.txt ---'
+   314	--- D.2: DERIVED_VIEW_NOTICE.txt ---
+   315	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z/DERIVED_VIEW_NOTICE.txt
+   316	DERIVED VIEW NOTICE
+   317	
+   318	The file stdout.derived.json is a DERIVED, NON-AUTHORITATIVE view.
+   319	
+   320	- Source: stdout.raw.kv (the single authoritative output)
+   321	- Purpose: Convenience parsing only
+   322	- Usage restriction: Derived views MUST NOT be used for determinism checks
+   323	
+   324	The authoritative output is always stdout.raw.kv, which contains the exact
+   325	bytes emitted by PoC v2 to stdout, in order, without modification.
+   326	
+   327	Any discrepancy between stdout.derived.json and stdout.raw.kv must be
+   328	resolved in favor of stdout.raw.kv.
+   329	+ echo ''
+   330	
+   331	+ echo '--- D.3: execution.meta.json ---'
+   332	--- D.3: execution.meta.json ---
+   333	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z/execution.meta.json
+   334	{
+   335	  "run_dir": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183310Z",
+   336	  "created_at_utc": "2026-01-07T18:33:10Z",
+   337	  "verification_passed": true,
+   338	  "execution_attempted": true,
+   339	  "exit_code": 0,
+   340	  "stdout_path": "stdout.raw.kv",
+   341	  "stderr_path": "stderr.raw.txt",
+   342	  "derived_stdout_json_path": "stdout.derived.json",
+   343	  "notes": "Execution completed."
+   344	}
+   345	+ echo ''
+   346	
+   347	+ echo ==============================================
+   348	==============================================
+   349	+ echo 'E) DETERMINISM VALIDATION'
+   350	E) DETERMINISM VALIDATION
+   351	+ echo ==============================================
+   352	==============================================
+   353	+ echo ''
+   354	
+   355	+ echo '--- E.1: Run determinism test (5 runs) ---'
+   356	--- E.1: Run determinism test (5 runs) ---
+   357	+ ./scripts/determinism_test_v2.sh --input /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt --runs 5
+   358	determinism_test: directory=/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z
+   359	determinism_test: input=/Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   360	determinism_test: runs=5
+   361	
+   362	determinism_test: run 1 of 5
+   363	determinism_test: run 1 completed (exit_code=0)
+   364	determinism_test: baseline set from run 1
+   365	
+   366	determinism_test: run 2 of 5
+   367	determinism_test: run 2 completed (exit_code=0)
+   368	
+   369	determinism_test: run 3 of 5
+   370	determinism_test: run 3 completed (exit_code=0)
+   371	
+   372	determinism_test: run 4 of 5
+   373	determinism_test: run 4 completed (exit_code=0)
+   374	
+   375	determinism_test: run 5 of 5
+   376	determinism_test: run 5 completed (exit_code=0)
+   377	
+   378	determinism_test: PASS (all 5 runs identical)
+   379	+ DET_EXIT=0
+   380	+ echo 'determinism_test_v2.sh exit code: 0'
+   381	determinism_test_v2.sh exit code: 0
+   382	+ echo ''
+   383	
+   384	+ echo '--- E.2: Latest determinism test directory ---'
+   385	--- E.2: Latest determinism test directory ---
+   386	++ ls -t artifacts/determinism
+   387	++ head -n 1
+   388	+ LATEST_DET=test_20260107T183312Z
+   389	+ LATEST_DET_DIR=/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z
+   390	+ echo 'Latest determinism test: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z'
+   391	Latest determinism test: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z
+   392	+ echo ''
+   393	
+   394	+ echo '--- E.3: Determinism test contents ---'
+   395	--- E.3: Determinism test contents ---
+   396	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z
+   397	total 16
+   398	drwxr-xr-x@ 10 bpolania  staff   320 Jan  7 12:33 .
+   399	drwxr-xr-x@ 11 bpolania  staff   352 Jan  7 12:33 ..
+   400	drwxr-xr-x@  4 bpolania  staff   128 Jan  7 12:33 baseline
+   401	-rw-r--r--@  1 bpolania  staff    50 Jan  7 12:33 result.txt
+   402	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 12:33 run_001
+   403	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 12:33 run_002
+   404	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 12:33 run_003
+   405	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 12:33 run_004
+   406	drwxr-xr-x@  8 bpolania  staff   256 Jan  7 12:33 run_005
+   407	-rw-r--r--@  1 bpolania  staff  1129 Jan  7 12:33 summary.txt
+   408	+ echo ''
+   409	
+   410	+ echo '--- E.4: result.txt ---'
+   411	--- E.4: result.txt ---
+   412	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/result.txt
+   413	PASS: All 5 runs produced identical stdout.raw.kv
+   414	+ echo ''
+   415	
+   416	+ echo '--- E.5: summary.txt ---'
+   417	--- E.5: summary.txt ---
+   418	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/summary.txt
+   419	Determinism Test Summary
+   420	========================
+   421	Test directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z
+   422	Input file: /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   423	Run count: 5
+   424	Started: 2026-01-07T18:33:12Z
+   425	
+   426	Comparison target: stdout.raw.kv (byte-for-byte, no normalization)
+   427	Comparison method: cmp (binary comparison)
+   428	
+   429	Run 001: completed (exit_code=0, sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   430	
+   431	Baseline: run_001 (sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   432	
+   433	Run 002: completed (exit_code=0, sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   434	Run 003: completed (exit_code=0, sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   435	Run 004: completed (exit_code=0, sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   436	Run 005: completed (exit_code=0, sha256=06fbb25336bbee1f3dfef9b7777385785db387b7ef695f25b34bb49aea5a21d3)
+   437	
+   438	Completed: 2026-01-07T18:33:22Z
+   439	
+   440	RESULT: PASS
+   441	All 5 runs produced identical stdout.raw.kv
+   442	+ echo ''
+   443	
+   444	+ echo '--- E.6: Byte-for-byte comparison proof ---'
+   445	--- E.6: Byte-for-byte comparison proof ---
+   446	+ echo 'Comparing all stdout.raw.kv against baseline:'
+   447	Comparing all stdout.raw.kv against baseline:
+   448	+ for f in '"$LATEST_DET_DIR"/run_*/stdout.raw.kv'
+   449	+ cmp -s /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/baseline/stdout.raw.kv /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_001/stdout.raw.kv
+   450	+ CMP_EXIT=0
+   451	+ echo 'cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_001/stdout.raw.kv: exit_code=0'
+   452	cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_001/stdout.raw.kv: exit_code=0
+   453	+ for f in '"$LATEST_DET_DIR"/run_*/stdout.raw.kv'
+   454	+ cmp -s /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/baseline/stdout.raw.kv /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_002/stdout.raw.kv
+   455	+ CMP_EXIT=0
+   456	+ echo 'cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_002/stdout.raw.kv: exit_code=0'
+   457	cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_002/stdout.raw.kv: exit_code=0
+   458	+ for f in '"$LATEST_DET_DIR"/run_*/stdout.raw.kv'
+   459	+ cmp -s /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/baseline/stdout.raw.kv /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_003/stdout.raw.kv
+   460	+ CMP_EXIT=0
+   461	+ echo 'cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_003/stdout.raw.kv: exit_code=0'
+   462	cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_003/stdout.raw.kv: exit_code=0
+   463	+ for f in '"$LATEST_DET_DIR"/run_*/stdout.raw.kv'
+   464	+ cmp -s /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/baseline/stdout.raw.kv /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_004/stdout.raw.kv
+   465	+ CMP_EXIT=0
+   466	+ echo 'cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_004/stdout.raw.kv: exit_code=0'
+   467	cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_004/stdout.raw.kv: exit_code=0
+   468	+ for f in '"$LATEST_DET_DIR"/run_*/stdout.raw.kv'
+   469	+ cmp -s /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/baseline/stdout.raw.kv /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_005/stdout.raw.kv
+   470	+ CMP_EXIT=0
+   471	+ echo 'cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_005/stdout.raw.kv: exit_code=0'
+   472	cmp baseline vs /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/determinism/test_20260107T183312Z/run_005/stdout.raw.kv: exit_code=0
+   473	+ echo ''
+   474	
+   475	+ echo ==============================================
+   476	==============================================
+   477	+ echo 'F) RELOCATABILITY SPOT CHECK'
+   478	F) RELOCATABILITY SPOT CHECK
+   479	+ echo ==============================================
+   480	==============================================
+   481	+ echo ''
+   482	
+   483	+ echo '--- F.1: Invoke from /tmp ---'
+   484	--- F.1: Invoke from /tmp ---
+   485	+ cd /tmp
+   486	++ pwd
+   487	+ echo 'PWD: /tmp'
+   488	PWD: /tmp
+   489	+ /Users/bpolania/Documents/GitHub/brok-clu-demo/scripts/run_poc_v2.sh --input /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   490	run_directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183322Z
+   491	verification: invoking /Users/bpolania/Documents/GitHub/brok-clu-demo/scripts/verify_poc_v2.sh
+   492	verification: exit_code=0
+   493	execution: running bundle verify to set internal state
+   494	execution: run_entrypoint=scripts/run.sh
+   495	execution: invoking with input=/Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   496	execution: exit_code=0
+   497	+ RELOC_EXIT=0
+   498	+ echo 'run_poc_v2.sh exit code (from /tmp): 0'
+   499	run_poc_v2.sh exit code (from /tmp): 0
+   500	+ cd /Users/bpolania/Documents/GitHub/brok-clu-demo
+   501	+ echo ''
+   502	
+   503	+ echo '--- F.2: Artifacts still in repo ---'
+   504	--- F.2: Artifacts still in repo ---
+   505	+ ls -lt artifacts/run
+   506	+ head -n 5
+   507	total 0
+   508	drwxr-xr-x@  9 bpolania  staff  288 Jan  7 12:33 run_20260107T183322Z
+   509	drwxr-xr-x@  9 bpolania  staff  288 Jan  7 12:33 run_20260107T183320Z
+   510	drwxr-xr-x@  9 bpolania  staff  288 Jan  7 12:33 run_20260107T183318Z
+   511	drwxr-xr-x@  9 bpolania  staff  288 Jan  7 12:33 run_20260107T183316Z
+   512	+ echo ''
+   513	
+   514	+ echo ==============================================
+   515	==============================================
+   516	+ echo 'G) FAILURE HANDLING'
+   517	G) FAILURE HANDLING
+   518	+ echo ==============================================
+   519	==============================================
+   520	+ echo ''
+   521	
+   522	+ echo '--- G.1: Temporarily rename PROVENANCE.txt to induce failure ---'
+   523	--- G.1: Temporarily rename PROVENANCE.txt to induce failure ---
+   524	+ mv vendor/poc_v2/PROVENANCE.txt vendor/poc_v2/PROVENANCE.txt.bak
+   525	+ ls -la vendor/poc_v2/
+   526	total 2424
+   527	drwxr-xr-x@ 7 bpolania  staff      224 Jan  7 12:33 .
+   528	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 ..
+   529	-rw-------@ 1 bpolania  staff       21 Jan  7 00:27 .gitignore
+   530	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 evidence
+   531	-rw-r--r--@ 1 bpolania  staff  1226255 Jan  7 09:58 poc_v2.tar.gz
+   532	-rw-------@ 1 bpolania  staff      345 Jan  7 00:27 PROVENANCE.txt.bak
+   533	-rw-r--r--@ 1 bpolania  staff      161 Jan  7 10:37 SHA256SUMS.vendor
+   534	+ echo ''
+   535	
+   536	+ echo '--- G.2: Attempt verification (should fail) ---'
+   537	--- G.2: Attempt verification (should fail) ---
+   538	+ ./scripts/verify_poc_v2.sh
+   539	Tarball SHA-256 verified: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+   540	Extracting to: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183324Z/bundle_root
+   541	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183324Z/bundle_root/brok-clu-poc_v2-standalone
+   542	Verification entrypoint: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183324Z/bundle_root/brok-clu-poc_v2-standalone/scripts/verify.sh
+   543	Invoking PoC v2 verification...
+   544	
+   545	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T183324Z
+   546	
+   547	VERIFICATION PASSED
+   548	
+   549	PoC v2 Standalone Bundle Verification
+   550	======================================
+   551	
+   552	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183324Z/bundle_root/brok-clu-poc_v2-standalone
+   553	
+   554	Checking verification files...
+   555	Checking manifest files exist...
+   556	Verifying SHA256 checksums...
+   557	Checking required runtime files...
+   558	Checking executables...
+   559	Writing verification outputs...
+   560	
+   561	======================================
+   562	VERIFICATION PASSED
+   563	
+   564	Files verified: 19
+   565	Status: bundles/verified/verify.status.txt
+   566	Log:    bundles/verified/verify.log
+   567	======================================
+   568	+ FAIL_VERIFY_EXIT=0
+   569	+ echo 'verify_poc_v2.sh exit code (expected non-zero): 0'
+   570	verify_poc_v2.sh exit code (expected non-zero): 0
+   571	+ echo ''
+   572	
+   573	+ echo '--- G.3: Attempt run (should be blocked by verification) ---'
+   574	--- G.3: Attempt run (should be blocked by verification) ---
+   575	+ ./scripts/run_poc_v2.sh --input /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   576	run_directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z
+   577	verification: invoking /Users/bpolania/Documents/GitHub/brok-clu-demo/scripts/verify_poc_v2.sh
+   578	verification: exit_code=0
+   579	execution: running bundle verify to set internal state
+   580	execution: run_entrypoint=scripts/run.sh
+   581	execution: invoking with input=/Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   582	execution: exit_code=0
+   583	+ FAIL_RUN_EXIT=0
+   584	+ echo 'run_poc_v2.sh exit code (expected non-zero): 0'
+   585	run_poc_v2.sh exit code (expected non-zero): 0
+   586	+ echo ''
+   587	
+   588	+ echo '--- G.4: Check for execution.SKIPPED sentinel ---'
+   589	--- G.4: Check for execution.SKIPPED sentinel ---
+   590	++ ls -t artifacts/run
+   591	++ head -n 1
+   592	+ FAILED_RUN=run_20260107T183325Z
+   593	+ FAILED_RUN_DIR=/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z
+   594	+ echo 'Failed run directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z'
+   595	Failed run directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z
+   596	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z
+   597	total 40
+   598	drwxr-xr-x@  9 bpolania  staff   288 Jan  7 12:33 .
+   599	drwxr-xr-x@ 62 bpolania  staff  1984 Jan  7 12:33 ..
+   600	-rw-r--r--@  1 bpolania  staff   508 Jan  7 12:33 DERIVED_VIEW_NOTICE.txt
+   601	-rw-r--r--@  1 bpolania  staff   382 Jan  7 12:33 execution.meta.json
+   602	-rw-r--r--@  1 bpolania  staff     2 Jan  7 12:33 exit_code.txt
+   603	-rw-r--r--@  1 bpolania  staff     0 Jan  7 12:33 stderr.raw.txt
+   604	-rw-r--r--@  1 bpolania  staff  1970 Jan  7 12:33 stdout.derived.json
+   605	-rw-r--r--@  1 bpolania  staff   593 Jan  7 12:33 stdout.raw.kv
+   606	drwxr-xr-x@  5 bpolania  staff   160 Jan  7 12:33 verify
+   607	+ echo ''
+   608	
+   609	+ echo '--- G.5: execution.meta.json from failed run ---'
+   610	--- G.5: execution.meta.json from failed run ---
+   611	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z/execution.meta.json
+   612	{
+   613	  "run_dir": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T183325Z",
+   614	  "created_at_utc": "2026-01-07T18:33:25Z",
+   615	  "verification_passed": true,
+   616	  "execution_attempted": true,
+   617	  "exit_code": 0,
+   618	  "stdout_path": "stdout.raw.kv",
+   619	  "stderr_path": "stderr.raw.txt",
+   620	  "derived_stdout_json_path": "stdout.derived.json",
+   621	  "notes": "Execution completed."
+   622	}
+   623	+ echo ''
+   624	
+   625	+ echo '--- G.6: Restore PROVENANCE.txt ---'
+   626	--- G.6: Restore PROVENANCE.txt ---
+   627	+ mv vendor/poc_v2/PROVENANCE.txt.bak vendor/poc_v2/PROVENANCE.txt
+   628	+ ls -la vendor/poc_v2/
+   629	total 2424
+   630	drwxr-xr-x@ 7 bpolania  staff      224 Jan  7 12:33 .
+   631	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 ..
+   632	-rw-------@ 1 bpolania  staff       21 Jan  7 00:27 .gitignore
+   633	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 evidence
+   634	-rw-r--r--@ 1 bpolania  staff  1226255 Jan  7 09:58 poc_v2.tar.gz
+   635	-rw-------@ 1 bpolania  staff      345 Jan  7 00:27 PROVENANCE.txt
+   636	-rw-r--r--@ 1 bpolania  staff      161 Jan  7 10:37 SHA256SUMS.vendor
+   637	+ echo ''
+   638	
+   639	+ echo '--- G.7: Verify restoration - run verification again ---'
+   640	--- G.7: Verify restoration - run verification again ---
+   641	+ ./scripts/verify_poc_v2.sh
+   642	Tarball SHA-256 verified: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+   643	Extracting to: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183326Z/bundle_root
+   644	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183326Z/bundle_root/brok-clu-poc_v2-standalone
+   645	Verification entrypoint: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183326Z/bundle_root/brok-clu-poc_v2-standalone/scripts/verify.sh
+   646	Invoking PoC v2 verification...
+   647	
+   648	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T183326Z
+   649	
+   650	VERIFICATION PASSED
+   651	
+   652	PoC v2 Standalone Bundle Verification
+   653	======================================
+   654	
+   655	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T183326Z/bundle_root/brok-clu-poc_v2-standalone
+   656	
+   657	Checking verification files...
+   658	Checking manifest files exist...
+   659	Verifying SHA256 checksums...
+   660	Checking required runtime files...
+   661	Checking executables...
+   662	Writing verification outputs...
+   663	
+   664	======================================
+   665	VERIFICATION PASSED
+   666	
+   667	Files verified: 19
+   668	Status: bundles/verified/verify.status.txt
+   669	Log:    bundles/verified/verify.log
+   670	======================================
+   671	+ RESTORED_EXIT=0
+   672	+ echo 'verify_poc_v2.sh exit code after restore: 0'
+   673	verify_poc_v2.sh exit code after restore: 0
+   674	+ echo ''
+   675	
+   676	+ echo ==============================================
+   677	==============================================
+   678	+ echo 'FINAL STATE'
+   679	FINAL STATE
+   680	+ echo ==============================================
+   681	==============================================
+   682	+ echo ''
+   683	
+   684	+ echo '--- Git status ---'
+   685	--- Git status ---
+   686	+ git status -sb
+   687	## main...origin/main
+   688	?? evidence/phase_v2_7/
+   689	+ echo ''
+   690	
+   691	+ echo '--- Vendor integrity check ---'
+   692	--- Vendor integrity check ---
+   693	+ shasum -a 256 vendor/poc_v2/poc_v2.tar.gz
+   694	7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a  vendor/poc_v2/poc_v2.tar.gz
+   695	+ shasum -a 256 vendor/poc_v2/PROVENANCE.txt
+   696	51fec5be8eea6fd1c8d689a5646c86b32e016d670ba20f1b70afe68f0c860f67  vendor/poc_v2/PROVENANCE.txt
+   697	+ echo ''
+   698	
+   699	+ echo ==============================================
+   700	==============================================
+   701	+ echo 'PHASE V2-7 VALIDATION COMPLETE'
+   702	PHASE V2-7 VALIDATION COMPLETE
+   703	+ echo ==============================================
+   704	==============================================
+   705	++ date -u +%Y-%m-%dT%H:%M:%SZ
+   706	+ echo 'Timestamp: 2026-01-07T18:33:27Z'
+   707	Timestamp: 2026-01-07T18:33:27Z
+   708	
+   709	==============================================
+   710	ADDENDUM: CORRECTED FAILURE HANDLING TEST
+   711	==============================================
+   712	
+   713	The following section replaces the original G) test which did not
+   714	produce a true verification failure.
+   715	
+   716	+ echo ==============================================
+   717	==============================================
+   718	+ echo 'PHASE V2-7 FAILURE HANDLING (CORRECTED)'
+   719	PHASE V2-7 FAILURE HANDLING (CORRECTED)
+   720	+ echo ==============================================
+   721	==============================================
+   722	+ echo ''
+   723	
+   724	++ date -u +%Y-%m-%dT%H:%M:%SZ
+   725	+ echo 'Timestamp: 2026-01-07T18:41:10Z'
+   726	Timestamp: 2026-01-07T18:41:10Z
+   727	+ echo ''
+   728	
+   729	+ REPO_ROOT=/Users/bpolania/Documents/GitHub/brok-clu-demo
+   730	+ cd /Users/bpolania/Documents/GitHub/brok-clu-demo
+   731	+ echo ==============================================
+   732	==============================================
+   733	+ echo 'G.0) BASELINE STATE'
+   734	G.0) BASELINE STATE
+   735	+ echo ==============================================
+   736	==============================================
+   737	+ echo ''
+   738	
+   739	+ echo '--- G.0.1: PWD ---'
+   740	--- G.0.1: PWD ---
+   741	+ pwd
+   742	/Users/bpolania/Documents/GitHub/brok-clu-demo
+   743	+ echo ''
+   744	
+   745	+ echo '--- G.0.2: Git status ---'
+   746	--- G.0.2: Git status ---
+   747	+ git status -sb
+   748	## main...origin/main
+   749	?? evidence/phase_v2_7/
+   750	+ echo ''
+   751	
+   752	+ echo '--- G.0.3: Vendor directory listing (baseline) ---'
+   753	--- G.0.3: Vendor directory listing (baseline) ---
+   754	+ ls -l vendor/poc_v2/
+   755	total 2416
+   756	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 evidence
+   757	-rw-r--r--@ 1 bpolania  staff  1226255 Jan  7 09:58 poc_v2.tar.gz
+   758	-rw-------@ 1 bpolania  staff      345 Jan  7 00:27 PROVENANCE.txt
+   759	-rw-r--r--@ 1 bpolania  staff      161 Jan  7 10:37 SHA256SUMS.vendor
+   760	+ echo ''
+   761	
+   762	+ echo '--- G.0.4: Tarball SHA-256 (baseline) ---'
+   763	--- G.0.4: Tarball SHA-256 (baseline) ---
+   764	+ shasum -a 256 vendor/poc_v2/poc_v2.tar.gz
+   765	7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a  vendor/poc_v2/poc_v2.tar.gz
+   766	+ echo ''
+   767	
+   768	+ echo '--- G.0.5: Tarball permissions (baseline) ---'
+   769	--- G.0.5: Tarball permissions (baseline) ---
+   770	+ stat -f '%Lp %N' vendor/poc_v2/poc_v2.tar.gz
+   771	644 vendor/poc_v2/poc_v2.tar.gz
+   772	+ echo ''
+   773	
+   774	+ echo ==============================================
+   775	==============================================
+   776	+ echo 'G.1) INDUCE VERIFICATION FAILURE'
+   777	G.1) INDUCE VERIFICATION FAILURE
+   778	+ echo ==============================================
+   779	==============================================
+   780	+ echo ''
+   781	
+   782	+ echo '--- G.1.1: Method used: chmod 000 (make tarball unreadable) ---'
+   783	--- G.1.1: Method used: chmod 000 (make tarball unreadable) ---
+   784	+ echo 'Applying: chmod 000 vendor/poc_v2/poc_v2.tar.gz'
+   785	Applying: chmod 000 vendor/poc_v2/poc_v2.tar.gz
+   786	+ chmod 000 vendor/poc_v2/poc_v2.tar.gz
+   787	+ echo ''
+   788	
+   789	+ echo '--- G.1.2: Confirm permissions changed ---'
+   790	--- G.1.2: Confirm permissions changed ---
+   791	+ ls -l vendor/poc_v2/poc_v2.tar.gz
+   792	----------  1 bpolania  staff  1226255 Jan  7 09:58 vendor/poc_v2/poc_v2.tar.gz
+   793	+ stat -f '%Lp %N' vendor/poc_v2/poc_v2.tar.gz
+   794	0 vendor/poc_v2/poc_v2.tar.gz
+   795	+ echo ''
+   796	
+   797	+ echo ==============================================
+   798	==============================================
+   799	+ echo 'G.2) ATTEMPT VERIFICATION (SHOULD FAIL)'
+   800	G.2) ATTEMPT VERIFICATION (SHOULD FAIL)
+   801	+ echo ==============================================
+   802	==============================================
+   803	+ echo ''
+   804	
+   805	+ echo '--- G.2.1: Run verify_poc_v2.sh ---'
+   806	--- G.2.1: Run verify_poc_v2.sh ---
+   807	+ ./scripts/verify_poc_v2.sh
+   808	shasum: /Users/bpolania/Documents/GitHub/brok-clu-demo/vendor/poc_v2/poc_v2.tar.gz: Permission denied
+   809	Expected: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+   810	Actual:   
+   811	VERIFICATION FAILED: Tarball SHA-256 mismatch
+   812	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T184110Z
+   813	+ VERIFY_EXIT=1
+   814	+ echo ''
+   815	
+   816	+ echo 'verify_poc_v2.sh exit code: 1'
+   817	verify_poc_v2.sh exit code: 1
+   818	+ echo ''
+   819	
+   820	+ echo ==============================================
+   821	==============================================
+   822	+ echo 'G.3) ATTEMPT RUN (SHOULD BE BLOCKED)'
+   823	G.3) ATTEMPT RUN (SHOULD BE BLOCKED)
+   824	+ echo ==============================================
+   825	==============================================
+   826	+ echo ''
+   827	
+   828	+ echo '--- G.3.1: Run run_poc_v2.sh ---'
+   829	--- G.3.1: Run run_poc_v2.sh ---
+   830	+ ./scripts/run_poc_v2.sh --input /Users/bpolania/Documents/GitHub/brok-clu-demo/examples/inputs/accept_restart_alpha_1.txt
+   831	run_directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z
+   832	verification: invoking /Users/bpolania/Documents/GitHub/brok-clu-demo/scripts/verify_poc_v2.sh
+   833	verification: exit_code=1
+   834	execution: SKIPPED (verification failed)
+   835	+ RUN_EXIT=1
+   836	+ echo ''
+   837	
+   838	+ echo 'run_poc_v2.sh exit code: 1'
+   839	run_poc_v2.sh exit code: 1
+   840	+ echo ''
+   841	
+   842	+ echo '--- G.3.2: Identify latest run directory ---'
+   843	--- G.3.2: Identify latest run directory ---
+   844	++ ls -t artifacts/run
+   845	++ head -n 1
+   846	+ LATEST_RUN=run_20260107T184110Z
+   847	+ '[' -n run_20260107T184110Z ']'
+   848	+ LATEST_RUN_DIR=/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z
+   849	+ echo 'Latest run directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z'
+   850	Latest run directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z
+   851	+ echo ''
+   852	
+   853	+ echo '--- G.3.3: Run directory contents ---'
+   854	--- G.3.3: Run directory contents ---
+   855	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z
+   856	total 8
+   857	drwxr-xr-x@  5 bpolania  staff   160 Jan  7 12:41 .
+   858	drwxr-xr-x@ 63 bpolania  staff  2016 Jan  7 12:41 ..
+   859	-rw-r--r--@  1 bpolania  staff   381 Jan  7 12:41 execution.meta.json
+   860	-rw-r--r--@  1 bpolania  staff     0 Jan  7 12:41 execution.SKIPPED
+   861	drwxr-xr-x@  5 bpolania  staff   160 Jan  7 12:41 verify
+   862	+ echo ''
+   863	
+   864	+ echo '--- G.3.4: Check for execution.meta.json ---'
+   865	--- G.3.4: Check for execution.meta.json ---
+   866	+ '[' -f /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/execution.meta.json ']'
+   867	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/execution.meta.json
+   868	{
+   869	  "run_dir": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z",
+   870	  "created_at_utc": "2026-01-07T18:41:10Z",
+   871	  "verification_passed": false,
+   872	  "execution_attempted": false,
+   873	  "exit_code": null,
+   874	  "stdout_path": null,
+   875	  "stderr_path": null,
+   876	  "derived_stdout_json_path": null,
+   877	  "notes": "Verification failed (exit 1). Execution not attempted."
+   878	}
+   879	+ echo ''
+   880	
+   881	+ echo '--- G.3.5: Check for stdout.raw.kv ---'
+   882	--- G.3.5: Check for stdout.raw.kv ---
+   883	+ '[' -f /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/stdout.raw.kv ']'
+   884	+ echo 'stdout.raw.kv ABSENT (execution blocked - expected)'
+   885	stdout.raw.kv ABSENT (execution blocked - expected)
+   886	+ echo ''
+   887	
+   888	+ echo '--- G.3.6: Check verify/ subdirectory ---'
+   889	--- G.3.6: Check verify/ subdirectory ---
+   890	+ '[' -d /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/verify ']'
+   891	+ echo 'verify/ subdirectory contents:'
+   892	verify/ subdirectory contents:
+   893	+ ls -la /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/verify/
+   894	total 16
+   895	drwxr-xr-x@ 5 bpolania  staff  160 Jan  7 12:41 .
+   896	drwxr-xr-x@ 5 bpolania  staff  160 Jan  7 12:41 ..
+   897	-rw-r--r--@ 1 bpolania  staff    2 Jan  7 12:41 exit_code.txt
+   898	-rw-r--r--@ 1 bpolania  staff  338 Jan  7 12:41 stderr.txt
+   899	-rw-r--r--@ 1 bpolania  staff    0 Jan  7 12:41 stdout.txt
+   900	+ echo ''
+   901	
+   902	+ echo verify/exit_code.txt:
+   903	verify/exit_code.txt:
+   904	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/verify/exit_code.txt
+   905	1
+   906	+ echo ''
+   907	
+   908	+ echo verify/stderr.txt:
+   909	verify/stderr.txt:
+   910	+ cat /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T184110Z/verify/stderr.txt
+   911	shasum: /Users/bpolania/Documents/GitHub/brok-clu-demo/vendor/poc_v2/poc_v2.tar.gz: Permission denied
+   912	Expected: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+   913	Actual:   
+   914	VERIFICATION FAILED: Tarball SHA-256 mismatch
+   915	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T184110Z
+   916	+ echo ''
+   917	
+   918	+ echo ==============================================
+   919	==============================================
+   920	+ echo 'G.4) RESTORE BASELINE'
+   921	G.4) RESTORE BASELINE
+   922	+ echo ==============================================
+   923	==============================================
+   924	+ echo ''
+   925	
+   926	+ echo '--- G.4.1: Restore tarball permissions ---'
+   927	--- G.4.1: Restore tarball permissions ---
+   928	+ chmod 644 vendor/poc_v2/poc_v2.tar.gz
+   929	+ echo 'Applied: chmod 644 vendor/poc_v2/poc_v2.tar.gz'
+   930	Applied: chmod 644 vendor/poc_v2/poc_v2.tar.gz
+   931	+ echo ''
+   932	
+   933	+ echo '--- G.4.2: Confirm permissions restored ---'
+   934	--- G.4.2: Confirm permissions restored ---
+   935	+ ls -l vendor/poc_v2/poc_v2.tar.gz
+   936	-rw-r--r--@ 1 bpolania  staff  1226255 Jan  7 09:58 vendor/poc_v2/poc_v2.tar.gz
+   937	+ stat -f '%Lp %N' vendor/poc_v2/poc_v2.tar.gz
+   938	644 vendor/poc_v2/poc_v2.tar.gz
+   939	+ echo ''
+   940	
+   941	+ echo '--- G.4.3: Verify tarball SHA-256 unchanged ---'
+   942	--- G.4.3: Verify tarball SHA-256 unchanged ---
+   943	+ shasum -a 256 vendor/poc_v2/poc_v2.tar.gz
+   944	7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a  vendor/poc_v2/poc_v2.tar.gz
+   945	+ echo ''
+   946	
+   947	+ echo ==============================================
+   948	==============================================
+   949	+ echo 'G.5) CONFIRM RESTORATION (VERIFY SUCCEEDS)'
+   950	G.5) CONFIRM RESTORATION (VERIFY SUCCEEDS)
+   951	+ echo ==============================================
+   952	==============================================
+   953	+ echo ''
+   954	
+   955	+ echo '--- G.5.1: Run verify_poc_v2.sh after restore ---'
+   956	--- G.5.1: Run verify_poc_v2.sh after restore ---
+   957	+ ./scripts/verify_poc_v2.sh
+   958	Tarball SHA-256 verified: 7aa008f23f5fed51cb40c28ac8ec84fe036c3500ff2b9c51da1bb954bb74ed9a
+   959	Extracting to: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T184110Z/bundle_root
+   960	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T184110Z/bundle_root/brok-clu-poc_v2-standalone
+   961	Verification entrypoint: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T184110Z/bundle_root/brok-clu-poc_v2-standalone/scripts/verify.sh
+   962	Invoking PoC v2 verification...
+   963	
+   964	Capture directory: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/verify/run_20260107T184110Z
+   965	
+   966	VERIFICATION PASSED
+   967	
+   968	PoC v2 Standalone Bundle Verification
+   969	======================================
+   970	
+   971	Bundle root: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/poc_v2_extracted/run_20260107T184110Z/bundle_root/brok-clu-poc_v2-standalone
+   972	
+   973	Checking verification files...
+   974	Checking manifest files exist...
+   975	Verifying SHA256 checksums...
+   976	Checking required runtime files...
+   977	Checking executables...
+   978	Writing verification outputs...
+   979	
+   980	======================================
+   981	VERIFICATION PASSED
+   982	
+   983	Files verified: 19
+   984	Status: bundles/verified/verify.status.txt
+   985	Log:    bundles/verified/verify.log
+   986	======================================
+   987	+ RESTORED_VERIFY_EXIT=0
+   988	+ echo ''
+   989	
+   990	+ echo 'verify_poc_v2.sh exit code after restore: 0'
+   991	verify_poc_v2.sh exit code after restore: 0
+   992	+ echo ''
+   993	
+   994	+ echo ==============================================
+   995	==============================================
+   996	+ echo 'G.6) FINAL STATE'
+   997	G.6) FINAL STATE
+   998	+ echo ==============================================
+   999	==============================================
+  1000	+ echo ''
+  1001	
+  1002	+ echo '--- G.6.1: Git status ---'
+  1003	--- G.6.1: Git status ---
+  1004	+ git status -sb
+  1005	## main...origin/main
+  1006	?? evidence/phase_v2_7/
+  1007	+ echo ''
+  1008	
+  1009	+ echo '--- G.6.2: Vendor directory listing (final) ---'
+  1010	--- G.6.2: Vendor directory listing (final) ---
+  1011	+ ls -l vendor/poc_v2/
+  1012	total 2416
+  1013	drwxr-xr-x@ 3 bpolania  staff       96 Jan  7 00:27 evidence
+  1014	-rw-r--r--@ 1 bpolania  staff  1226255 Jan  7 09:58 poc_v2.tar.gz
+  1015	-rw-------@ 1 bpolania  staff      345 Jan  7 00:27 PROVENANCE.txt
+  1016	-rw-r--r--@ 1 bpolania  staff      161 Jan  7 10:37 SHA256SUMS.vendor
+  1017	+ echo ''
+  1018	
+  1019	+ echo ==============================================
+  1020	==============================================
+  1021	+ echo 'G.7) FAILURE TEST SUMMARY'
+  1022	G.7) FAILURE TEST SUMMARY
+  1023	+ echo ==============================================
+  1024	==============================================
+  1025	+ echo ''
+  1026	
+  1027	+ echo 'Failure-induction method: chmod 000 vendor/poc_v2/poc_v2.tar.gz'
+  1028	Failure-induction method: chmod 000 vendor/poc_v2/poc_v2.tar.gz
+  1029	+ echo 'verify_poc_v2.sh exit code (with failure): 1'
+  1030	verify_poc_v2.sh exit code (with failure): 1
+  1031	+ echo 'run_poc_v2.sh exit code (blocked): 1'
+  1032	run_poc_v2.sh exit code (blocked): 1
+  1033	+ echo 'verify_poc_v2.sh exit code (after restore): 0'
+  1034	verify_poc_v2.sh exit code (after restore): 0
+  1035	+ echo ''
+  1036	
+  1037	+ '[' 1 -ne 0 ']'
+  1038	+ '[' 1 -ne 0 ']'
+  1039	+ '[' 0 -eq 0 ']'
+  1040	+ echo 'RESULT: PASS - Verification failure induced, execution blocked, restoration successful'
+  1041	RESULT: PASS - Verification failure induced, execution blocked, restoration successful
+  1042	+ echo ''
+  1043	
+  1044	+ echo ==============================================
+  1045	==============================================
+  1046	+ echo 'PHASE V2-7 FAILURE HANDLING COMPLETE'
+  1047	PHASE V2-7 FAILURE HANDLING COMPLETE
+  1048	+ echo ==============================================
+  1049	==============================================
+  1050	++ date -u +%Y-%m-%dT%H:%M:%SZ
+  1051	+ echo 'Timestamp: 2026-01-07T18:41:11Z'
+  1052	Timestamp: 2026-01-07T18:41:11Z
