@@ -1,0 +1,62 @@
+# Phase S-2: Curated Product Demonstration Set
+#
+# DERIVED, NON-AUTHORITATIVE
+#
+# This file defines the curated subset of inputs for the product-facing
+# demonstration. All inputs are drawn from Phase S-1 SES_001.
+#
+# Constraint: No new semantic inputs created in S-2.
+# Available inputs: 3 (from SES_001_restart_alpha.yaml)
+#
+# Authoritative output remains: artifacts/run/.../stdout.raw.kv
+
+demo_id: DEMO_S2_001
+title: "Semantic Capability Demonstration - Bounded Paraphrase Behavior"
+description: |
+  This demo shows behavior, not correctness of meaning.
+
+  Demonstrates end-to-end behavior when semantic inputs are processed
+  through the frozen PoC v2 runtime, showing both runtime guarantees
+  and semantic variability across paraphrases.
+
+source_suite: SES_001
+source_file: semantic/suites/SES_001_restart_alpha.yaml
+
+# Curated input count: 3
+# Note: Phase S-2 does not create new inputs; uses existing S-1 inputs only.
+
+inputs:
+
+  - id: demo_input_01
+    source: "SES_001/input_01"
+    input_string: "restart alpha subsystem gracefully"
+    category: happy_path
+    intended_meaning_note: "Request to restart the alpha subsystem using graceful mode"
+    expected_demo_point: "Shows baseline runtime behavior with successful verification and execution"
+
+  - id: demo_input_02
+    source: "SES_001/input_02"
+    input_string: "graceful restart of alpha"
+    category: paraphrase_diverge
+    intended_meaning_note: "Alternate phrasing for restarting alpha subsystem gracefully"
+    expected_demo_point: "Shows that paraphrased inputs may produce differing authoritative outputs"
+
+  - id: demo_input_03
+    source: "SES_001/input_03"
+    input_string: "please restart the alpha subsystem in graceful mode"
+    category: paraphrase_diverge
+    intended_meaning_note: "Polite variant requesting graceful restart of alpha subsystem"
+    expected_demo_point: "Shows semantic variability—same intended action, different output metadata"
+
+categories_present:
+  - happy_path: 1
+  - paraphrase_diverge: 2
+  - paraphrase_match: 0
+  - surprising_path: 0
+
+divergence_observed: true
+divergence_note: |
+  Phase S-1 classified SES_001 as DIVERGENT.
+  Byte-for-byte comparison of stdout.raw.kv showed differences.
+  Observed cause: embedded temp file paths in PoC v2 output vary per run.
+  This is documented honestly; divergence is not hidden.
