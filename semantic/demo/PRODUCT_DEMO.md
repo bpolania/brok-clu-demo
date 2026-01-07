@@ -20,6 +20,17 @@ The demonstration uses a bounded, curated set of 3 inputs from Phase S-1 (SES_00
 
 **Important**: This demo illustrates behavior, not linguistic coverage or semantic correctness.
 
+### Scope of This Curated Set
+
+This demo uses a **minimal curated set** of 3 inputs for brevity. The set includes:
+
+- 1 baseline input (happy_path)
+- 2 paraphrase variants that produced divergent outputs (paraphrase_diverge)
+
+The absence of a "paraphrase_match" example (where paraphrases produce identical outputs) does not imply that such cases cannot occur. It reflects only what was available in the existing SES_001 suite at the time of this demo.
+
+No new semantic inputs were created for Phase S-2. This constraint is intentional and preserves the boundary between phases.
+
 ---
 
 ## 2. What Is Guaranteed

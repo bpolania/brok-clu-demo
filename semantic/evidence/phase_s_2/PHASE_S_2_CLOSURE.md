@@ -15,7 +15,9 @@
 
 ---
 
-## Files Added
+## Files Added/Modified by Phase S-2
+
+Phase S-2 added files **only** under `semantic/demo/` and `semantic/evidence/phase_s_2/`:
 
 | File | Purpose |
 |------|---------|
@@ -26,6 +28,23 @@
 | `semantic/demo/explanations/demo_input_03.md` | Per-input explanation (paraphrase diverge) |
 | `semantic/demo/runs/INDEX.md` | Demo run index with authoritative output paths |
 | `semantic/evidence/phase_s_2/PHASE_S_2_CLOSURE.md` | This file |
+| `semantic/phases/PHASE_S_2_PLACEHOLDER.md` | Placeholder update (status only) |
+
+---
+
+## Files NOT Modified by Phase S-2
+
+Phase S-2 explicitly did **NOT** modify:
+
+| Path | Reason |
+|------|--------|
+| `vendor/` | PoC v2 bundle is immutable |
+| `bundles/` | Runtime bundles are immutable |
+| `scripts/` | Runtime scripts are immutable |
+| `semantic/scripts/run_semantic_suite.sh` | S-1 runner must remain unchanged |
+| `semantic/artifacts/*` | S-1 execution artifacts are frozen |
+| `semantic/README.md` | Layer documentation owned by S-0/S-1 |
+| `semantic/suites/*` | SES definitions owned by S-1 |
 
 ---
 
