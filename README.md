@@ -199,6 +199,7 @@ This demo has explicit boundaries:
 | `PHASE0_EXIT_ATTESTATION.md` | Phase 0 closure attestation |
 | `PHASE3_EXECUTION_LOCK.md` | Verification and execution semantics |
 | `evidence/phase5/PHASE5_FINAL_CLOSURE_REPORT.md` | Determinism validation closure |
+| `semantic/README.md` | Semantic Capability Layer documentation |
 
 ---
 
@@ -216,5 +217,8 @@ brok-clu-demo/
 ├── artifacts/                  # Generated outputs (gitignored)
 │   ├── last_run/
 │   └── determinism/
-└── evidence/                   # Phase closure documentation
+├── evidence/                   # Phase closure documentation
+└── semantic/                   # Semantic Capability Layer (Layer 1)
+    ├── contract/               # Scope lock and contracts
+    └── phases/                 # Phase documentation
 ```
