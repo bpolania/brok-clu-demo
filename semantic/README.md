@@ -62,7 +62,7 @@ All phases execute under S-0 constraints and cannot weaken them.
 | Phase | Name | Status | Description |
 |-------|------|--------|-------------|
 | S-0 | Scope Lock & Contract Definition | **LOCKED** | Defines constraints, non-claims, and contract for all semantic phases |
-| S-1 | Semantic Suite Execution | NOT STARTED | Execute frozen input suite against PoC v2, capture outputs |
+| S-1 | Semantic Suite Execution | **COMPLETE** | Execute frozen input suite against PoC v2, capture outputs |
 | S-2 | Curated Product Demonstration | NOT STARTED | Present illustrative semantic capabilities for product understanding |
 | S-3 | Optional Semantic Regression Gate | NOT STARTED | Optional regression gate for semantic consistency (future) |
 
@@ -75,10 +75,22 @@ semantic/
 ├── README.md                         # This file
 ├── contract/
 │   └── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
-└── phases/
-    ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (not started)
-    ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (not started)
-    └── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (not started)
+├── phases/
+│   ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (complete)
+│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (not started)
+│   └── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (not started)
+├── suites/
+│   └── SES_001_restart_alpha.yaml    # SES definitions
+├── scripts/
+│   └── run_semantic_suite.sh         # Suite runner
+├── artifacts/                        # Generated (derived, non-authoritative)
+│   ├── SES_SUMMARY.md
+│   └── ses_001/
+│       ├── execution_index.md
+│       └── runs/input_*/runtime_ref.txt
+└── evidence/
+    └── phase_s_1/
+        └── PHASE_S_1_CLOSURE.md      # Phase S-1 closure attestation
 ```
 
 ---
