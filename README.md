@@ -156,7 +156,7 @@ This demo has explicit boundaries:
 | File | Description |
 |------|-------------|
 | `VERIFY.md` | Trust model and verification boundary |
-| `evidence/phase_v2_7/` | Final validation and freeze attestation |
+| `docs/proofs/phase_v2_7/` | Final validation and freeze attestation |
 | `semantic/README.md` | Semantic Capability Layer documentation |
 
 ---
@@ -175,7 +175,7 @@ brok-clu-demo/
 │   └── PROVENANCE.txt          # Origin metadata
 ├── examples/inputs/            # Locked example inputs
 ├── artifacts/                  # Generated outputs (gitignored)
-├── evidence/phase_v2_7/        # Freeze attestation
+├── docs/proofs/phase_v2_7/     # Freeze attestation
 └── semantic/                   # Semantic Capability Layer
     ├── contract/               # Scope lock and contracts
     ├── scripts/                # Semantic tools
