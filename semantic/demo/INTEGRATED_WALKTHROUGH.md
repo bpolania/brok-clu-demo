@@ -196,7 +196,7 @@ See: [CLI_USAGE.md](../equivalence/CLI_USAGE.md) for full usage documentation.
 |----------|-------------|
 | `artifacts/run/run_<timestamp>/stdout.raw.kv` | Execution output |
 
-### Derived (Semantic)
+### Derived (Semantic) — Generated at runtime, not committed
 
 | Location | Description |
 |----------|-------------|

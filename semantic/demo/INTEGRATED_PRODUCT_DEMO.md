@@ -43,9 +43,9 @@ This demo shows behavior, not correctness of meaning.
 | Label | Output Type | Example |
 |-------|-------------|---------|
 | **AUTHORITATIVE (runtime)** | PoC v2 execution output | `artifacts/run/run_<timestamp>/stdout.raw.kv` |
-| **DERIVED (semantic)** | Semantic suite summaries | `semantic/artifacts/SES_SUMMARY.md` |
-| **DERIVED (semantic)** | Execution indexes | `semantic/artifacts/ses_001/execution_index.md` |
-| **DERIVED (semantic)** | Regression reports | `semantic/regression/reports/*.md` |
+| **DERIVED (semantic)** | Semantic suite summaries | `semantic/artifacts/SES_SUMMARY.md` (generated at runtime) |
+| **DERIVED (semantic)** | Execution indexes | `semantic/artifacts/ses_001/execution_index.md` (generated at runtime) |
+| **DERIVED (semantic)** | Regression reports | `semantic/regression/reports/*.md` (generated at runtime) |
 | **DERIVED (semantic)** | This documentation | All markdown files |
 
 **Derived artifacts are illustrative only.** The following are all derived and non-authoritative:
@@ -125,7 +125,7 @@ This demo shows behavior, not correctness of meaning.
 ./semantic/scripts/run_semantic_suite.sh
 ```
 
-**Output locations:**
+**Output locations (generated at runtime, not committed):**
 - Suite summary: `semantic/artifacts/SES_SUMMARY.md`
 - Per-SES index: `semantic/artifacts/ses_001/execution_index.md`
 - Runtime references: `semantic/artifacts/ses_001/runs/input_*/runtime_ref.txt`
@@ -155,7 +155,7 @@ See: [PRODUCT_DEMO.md](PRODUCT_DEMO.md) for detailed semantic demo.
 ./semantic/regression/run_regression_check.sh
 ```
 
-**Output locations:**
+**Output locations (generated at runtime, not committed):**
 - Run summary: `semantic/regression/runs/run_<timestamp>/SUMMARY.json`
 - Per-input results: `semantic/regression/runs/run_<timestamp>/per_input/*.json`
 - Comparison report: `semantic/regression/reports/per_input_comparison.md`

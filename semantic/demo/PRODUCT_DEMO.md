@@ -76,18 +76,16 @@ The demo uses the existing Phase S-1 runner **unchanged**.
 ./semantic/scripts/run_semantic_suite.sh
 ```
 
-### Output locations:
+### Output locations (generated at runtime, not committed):
 
 - Suite summary: `semantic/artifacts/SES_SUMMARY.md`
 - Per-SES index: `semantic/artifacts/ses_001/execution_index.md`
 - Runtime references: `semantic/artifacts/ses_001/runs/input_*/runtime_ref.txt`
 - Authoritative outputs: `artifacts/run/run_<timestamp>/stdout.raw.kv`
 
-### View demo-specific documentation:
+### Demo-specific documentation:
 
 - Demo set definition: `semantic/demo/DEMO_SET.yaml`
-- Per-input explanations: `semantic/demo/explanations/*.md`
-- Run index: `semantic/demo/runs/INDEX.md`
 
 ---
 
@@ -102,8 +100,6 @@ This input represents a baseline command in the expected format. The runtime:
 2. Executes the input
 3. Produces authoritative output with `status=OK`
 
-See: [demo_input_01.md](explanations/demo_input_01.md)
-
 ### Scene B: Paraphrase Variant (Divergent)
 
 **Input**: `graceful restart of alpha`
@@ -115,8 +111,6 @@ This input expresses the same intended action using different word order. The ru
 
 However, byte-for-byte comparison with Scene A shows **DIFFER** due to embedded metadata (temp file paths in output header).
 
-See: [demo_input_02.md](explanations/demo_input_02.md)
-
 ### Scene C: Extended Paraphrase (Divergent)
 
 **Input**: `please restart the alpha subsystem in graceful mode`
@@ -127,8 +121,6 @@ This input adds polite phrasing and explicit mode specification. The runtime:
 3. Produces authoritative output with `status=OK`
 
 Byte-for-byte comparison shows **DIFFER** from baseline for the same reason as Scene B.
-
-See: [demo_input_03.md](explanations/demo_input_03.md)
 
 ### Scene D: Divergence Analysis
 
@@ -142,11 +134,11 @@ This divergence is **expected and documented**. The S-1 byte-for-byte comparison
 
 ## 6. Mapping Table
 
-| Input ID | Input String | Authoritative Output | Divergence Notes |
-|----------|--------------|----------------------|------------------|
-| demo_input_01 | `restart alpha subsystem gracefully` | `artifacts/run/run_20260107T231003Z/stdout.raw.kv` | BASELINE |
-| demo_input_02 | `graceful restart of alpha` | `artifacts/run/run_20260107T231005Z/stdout.raw.kv` | DIFFER (line 4: temp path) |
-| demo_input_03 | `please restart the alpha subsystem in graceful mode` | `artifacts/run/run_20260107T231007Z/stdout.raw.kv` | DIFFER (line 4: temp path) |
+| Input ID | Input String | Expected Semantic Output |
+|----------|--------------|--------------------------|
+| demo_input_01 | `restart alpha subsystem gracefully` | `status=OK`, `intent_id=14` |
+| demo_input_02 | `graceful restart of alpha` | `status=OK`, `intent_id=14` |
+| demo_input_03 | `please restart the alpha subsystem in graceful mode` | `status=OK`, `intent_id=14` |
 
 ---
 
@@ -158,7 +150,7 @@ The byte-for-byte divergence between outputs is caused by:
 2. **Temp file paths vary**: Each input is written to a unique temp file before execution
 3. **Strict comparison**: The S-1 runner uses `cmp -s` which compares every byte
 
-**Observed difference** (excerpt from diff):
+**Observed difference** (example from diff):
 ```
 4c4
 < Input:  /var/folders/.../tmp.9S3GalHcRB
@@ -200,9 +192,7 @@ This demo is designed with full transparency:
 ## References
 
 - Phase S-0 Contract: [PHASE_S_0_SCOPE_LOCK.md](../contract/PHASE_S_0_SCOPE_LOCK.md)
-- Phase S-1 Closure: [PHASE_S_1_CLOSURE.md](../evidence/phase_s_1/PHASE_S_1_CLOSURE.md)
 - Demo Set Definition: [DEMO_SET.yaml](DEMO_SET.yaml)
-- Demo Run Index: [INDEX.md](runs/INDEX.md)
 
 ---
 

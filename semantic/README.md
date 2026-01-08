@@ -66,6 +66,7 @@ All phases execute under S-0 constraints and cannot weaken them.
 | S-2 | Curated Product Demonstration | **COMPLETE** | Present illustrative semantic capabilities for product understanding |
 | S-3 | Optional Semantic Regression Gate | **COMPLETE** | Byte-level regression detection (observational) |
 | S-4 | Integrated Product Demo Planning | **COMPLETE** | Unified demo surface composing runtime + semantic layers |
+| S-5 | Weak Semantic Equivalence | **COMPLETE** | Rule-based equivalence CLI tool |
 
 **Recommended starting point:** [Integrated Product Demo](demo/INTEGRATED_PRODUCT_DEMO.md)
 
@@ -79,11 +80,6 @@ semantic/
 ├── contract/
 │   ├── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
 │   └── PHASE_S_4_SCOPE_LOCK.md       # S-4 scope lock
-├── phases/
-│   ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (complete)
-│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (complete)
-│   ├── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (complete)
-│   └── PHASE_S_4_PLACEHOLDER.md      # Integrated Product Demo (complete)
 ├── demo/
 │   ├── INTEGRATED_PRODUCT_DEMO.md    # Primary entrypoint (S-4)
 │   ├── INTEGRATED_WALKTHROUGH.md     # Command sequence (S-4)
@@ -96,16 +92,16 @@ semantic/
 ├── suites/
 │   └── SES_001_restart_alpha.yaml    # SES definitions
 ├── scripts/
-│   └── run_semantic_suite.sh         # Suite runner
-├── artifacts/                        # Generated (derived, non-authoritative)
-│   ├── SES_SUMMARY.md
-│   └── ses_001/
-│       ├── execution_index.md
-│       └── runs/input_*/runtime_ref.txt
-└── evidence/
-    ├── phase_s_1/PHASE_S_1_CLOSURE.md
-    ├── phase_s_2/PHASE_S_2_CLOSURE.md
-    └── phase_s_3/PHASE_S_3_CLOSURE.md
+│   ├── run_semantic_suite.sh         # Suite runner
+│   └── semantic_equivalence.sh       # S-5 equivalence CLI
+├── equivalence/
+│   ├── WSE_RULES.md                  # Rule V1 documentation
+│   ├── CLI_USAGE.md                  # CLI usage docs
+│   └── test_semantic_equivalence.sh  # Acceptance tests
+├── evidence/
+│   └── phase_s_5/PHASE_S_5_CLOSURE.md
+├── artifacts/                        # Generated at runtime (gitignored)
+└── regression/runs/                  # Generated at runtime (gitignored)
 ```
 
 ---

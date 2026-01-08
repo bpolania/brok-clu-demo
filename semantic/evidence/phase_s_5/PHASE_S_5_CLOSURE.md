@@ -20,7 +20,6 @@ Phase S-5 adds a read-only CLI tool that evaluates "equivalence under an explici
 | Rule Documentation | `semantic/equivalence/WSE_RULES.md` | ✓ Complete |
 | Usage Documentation | `semantic/equivalence/CLI_USAGE.md` | ✓ Complete |
 | Acceptance Tests | `semantic/equivalence/test_semantic_equivalence.sh` | ✓ Complete |
-| Phase Placeholder | `semantic/phases/PHASE_S_5_PLACEHOLDER.md` | ✓ Complete |
 
 ---
 

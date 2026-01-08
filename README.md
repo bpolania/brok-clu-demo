@@ -1,6 +1,6 @@
 # Brok-CLU Runtime Demo
 
-A sealed runtime demo that consumes the Brok-CLU PoC v1 artifact for deterministic command routing.
+A sealed runtime demo that consumes the Brok-CLU PoC v2 artifact for deterministic command routing.
 
 ---
 
@@ -23,7 +23,7 @@ This is **not** an SDK, framework, or extensible system. The runtime behavior ca
 | Requirement | Value |
 |-------------|-------|
 | Platform | macOS arm64 only |
-| Runtime | Brok-CLU PoC v1 (sealed, frozen) |
+| Runtime | Brok-CLU PoC v2 (sealed, frozen) |
 
 No other platforms are supported.
 
@@ -71,26 +71,28 @@ No partial output. No best-effort parsing.
 
 ## How to Run
 
-### Single-Run Mode
+### Step 1: Verify Bundle Integrity
 
 ```sh
-./run.sh <input-file>
+./scripts/verify_poc_v2.sh
+```
+
+### Step 2: Execute with Input
+
+```sh
+./scripts/run_poc_v2.sh --input <input-file>
 ```
 
 Example:
 ```sh
-./run.sh examples/inputs/accept_restart_alpha_1.txt
+echo "restart alpha subsystem gracefully" > /tmp/test_input.txt
+./scripts/run_poc_v2.sh --input /tmp/test_input.txt
 ```
 
 ### Determinism Test Mode
 
 ```sh
-./run.sh --determinism-test --input <file> --runs <N>
-```
-
-Example:
-```sh
-./run.sh --determinism-test --input examples/inputs/accept_restart_alpha_1.txt --runs 5
+./scripts/determinism_test_v2.sh --input <file> --runs <N>
 ```
 
 ---
@@ -99,49 +101,11 @@ Example:
 
 After execution, output artifacts are written to:
 
-| File | Description |
-|------|-------------|
-| `artifacts/last_run/output.raw.kv` | Authoritative runtime output (key=value format, exact copy of stdout) |
-| `artifacts/last_run/output.derived.json` | Derived JSON representation (non-authoritative, for inspection only) |
+| Location | Description |
+|----------|-------------|
+| `artifacts/run/run_<timestamp>/stdout.raw.kv` | **Authoritative** runtime output |
 
-### Interpreting Outputs
-
-- The `key=value` format in `output.raw.kv` is the **authoritative** runtime output.
-- The JSON in `output.derived.json` is **derived** strictly from the raw output and includes explicit markers:
-  - `"derived": true`
-  - `"source_format": "key=value"`
-- On execution failure, no derived JSON is produced.
-- Raw output is always captured if the runtime emits stdout, regardless of exit code.
-
----
-
-## Determinism Validation
-
-After running a determinism test, inspect results:
-
-```sh
-cat artifacts/determinism/summary.txt
-```
-
-Per-run outputs are preserved for comparison:
-```
-artifacts/determinism/run_001/output.raw.kv
-artifacts/determinism/run_002/output.raw.kv
-...
-```
-
-Compare any two runs:
-```sh
-diff artifacts/determinism/run_001/output.raw.kv artifacts/determinism/run_002/output.raw.kv
-```
-
-### Determinism Guarantees
-
-- Identical inputs produce byte-identical `output.raw.kv` across runs
-- Comparison is byte-for-byte using `diff -q`
-- No semantic interpretation or normalization
-- PASS: All runs identical, exit 0
-- FAIL: Any mismatch or failure, exit 1
+All other output files are derived and non-authoritative.
 
 ---
 
@@ -150,9 +114,8 @@ diff artifacts/determinism/run_001/output.raw.kv artifacts/determinism/run_002/o
 Verification is **mandatory** and runs before every execution attempt.
 
 Verification confirms:
-- All files in `MANIFEST.txt` exist
-- No extra files exist under `bundles/poc_v1/`
-- All SHA-256 checksums match
+- Vendored tarball SHA-256 matches `SHA256SUMS.vendor`
+- Extracted bundle matches internal checksums
 
 If verification fails, execution is blocked. See `VERIFY.md` for the complete trust model.
 
@@ -184,7 +147,6 @@ This demo has explicit boundaries:
 | SDK or API surface | This is a demo, not a library or framework |
 | Performance benchmarking | No timing, profiling, or performance metrics |
 | Production hardening | No security claims beyond verification |
-| Battleship demo | Out of scope for this repository |
 | Interactive UX | No REPL, GUI, or interactive modes |
 
 ---
@@ -194,11 +156,7 @@ This demo has explicit boundaries:
 | File | Description |
 |------|-------------|
 | `VERIFY.md` | Trust model and verification boundary |
-| `PHASE0_SCOPE_LOCK.md` | Phase 0 scope lock documentation |
-| `PHASE0_INPUTS_MANIFEST.json` | Machine-readable inputs manifest |
-| `PHASE0_EXIT_ATTESTATION.md` | Phase 0 closure attestation |
-| `PHASE3_EXECUTION_LOCK.md` | Verification and execution semantics |
-| `evidence/phase5/PHASE5_FINAL_CLOSURE_REPORT.md` | Determinism validation closure |
+| `evidence/phase_v2_7/` | Final validation and freeze attestation |
 | `semantic/README.md` | Semantic Capability Layer documentation |
 
 ---
@@ -207,18 +165,19 @@ This demo has explicit boundaries:
 
 ```
 brok-clu-demo/
-├── run.sh                      # Entrypoint (verification + execution)
-├── bundles/poc_v1/             # Vendored runtime artifacts (immutable)
-│   ├── bin/macos-arm64/cmd_interpreter
-│   ├── VERSION.txt
-│   ├── MANIFEST.txt
-│   └── SHA256SUMS
+├── scripts/                    # Entrypoint scripts
+│   ├── verify_poc_v2.sh        # Verification script
+│   ├── run_poc_v2.sh           # Execution script
+│   └── determinism_test_v2.sh  # Determinism test
+├── vendor/poc_v2/              # Vendored runtime artifacts (immutable)
+│   ├── poc_v2.tar.gz           # Sealed tarball
+│   ├── SHA256SUMS.vendor       # Tarball checksum
+│   └── PROVENANCE.txt          # Origin metadata
 ├── examples/inputs/            # Locked example inputs
 ├── artifacts/                  # Generated outputs (gitignored)
-│   ├── last_run/
-│   └── determinism/
-├── evidence/                   # Phase closure documentation
-└── semantic/                   # Semantic Capability Layer (Layer 1)
+├── evidence/phase_v2_7/        # Freeze attestation
+└── semantic/                   # Semantic Capability Layer
     ├── contract/               # Scope lock and contracts
-    └── phases/                 # Phase documentation
+    ├── scripts/                # Semantic tools
+    └── regression/             # Regression detection
 ```
