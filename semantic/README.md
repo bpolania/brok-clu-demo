@@ -63,8 +63,11 @@ All phases execute under S-0 constraints and cannot weaken them.
 |-------|------|--------|-------------|
 | S-0 | Scope Lock & Contract Definition | **LOCKED** | Defines constraints, non-claims, and contract for all semantic phases |
 | S-1 | Semantic Suite Execution | **COMPLETE** | Execute frozen input suite against PoC v2, capture outputs |
-| S-2 | Curated Product Demonstration | NOT STARTED | Present illustrative semantic capabilities for product understanding |
-| S-3 | Optional Semantic Regression Gate | NOT STARTED | Optional regression gate for semantic consistency (future) |
+| S-2 | Curated Product Demonstration | **COMPLETE** | Present illustrative semantic capabilities for product understanding |
+| S-3 | Optional Semantic Regression Gate | **COMPLETE** | Byte-level regression detection (observational) |
+| S-4 | Integrated Product Demo Planning | **COMPLETE** | Unified demo surface composing runtime + semantic layers |
+
+**Recommended starting point:** [Integrated Product Demo](demo/INTEGRATED_PRODUCT_DEMO.md)
 
 ---
 
@@ -74,11 +77,22 @@ All phases execute under S-0 constraints and cannot weaken them.
 semantic/
 ├── README.md                         # This file
 ├── contract/
-│   └── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
+│   ├── PHASE_S_0_SCOPE_LOCK.md       # Authoritative scope lock contract
+│   └── PHASE_S_4_SCOPE_LOCK.md       # S-4 scope lock
 ├── phases/
 │   ├── PHASE_S_1_PLACEHOLDER.md      # Semantic Suite Execution (complete)
-│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (not started)
-│   └── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (not started)
+│   ├── PHASE_S_2_PLACEHOLDER.md      # Curated Product Demonstration (complete)
+│   ├── PHASE_S_3_PLACEHOLDER.md      # Optional Semantic Regression Gate (complete)
+│   └── PHASE_S_4_PLACEHOLDER.md      # Integrated Product Demo (complete)
+├── demo/
+│   ├── INTEGRATED_PRODUCT_DEMO.md    # Primary entrypoint (S-4)
+│   ├── INTEGRATED_WALKTHROUGH.md     # Command sequence (S-4)
+│   ├── PRODUCT_DEMO.md               # Semantic demo (S-2)
+│   └── DEMO_SET.yaml                 # Demo input definitions
+├── regression/
+│   ├── README.md                     # Regression gate docs (S-3)
+│   ├── run_regression_check.sh       # Regression runner
+│   └── baselines/BASELINES.json      # Baseline references
 ├── suites/
 │   └── SES_001_restart_alpha.yaml    # SES definitions
 ├── scripts/
@@ -89,8 +103,9 @@ semantic/
 │       ├── execution_index.md
 │       └── runs/input_*/runtime_ref.txt
 └── evidence/
-    └── phase_s_1/
-        └── PHASE_S_1_CLOSURE.md      # Phase S-1 closure attestation
+    ├── phase_s_1/PHASE_S_1_CLOSURE.md
+    ├── phase_s_2/PHASE_S_2_CLOSURE.md
+    └── phase_s_3/PHASE_S_3_CLOSURE.md
 ```
 
 ---

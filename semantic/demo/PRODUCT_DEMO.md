@@ -2,6 +2,8 @@
 
 **DERIVED, NON-AUTHORITATIVE**
 
+> **Recommended**: Start with the [Integrated Product Demo](INTEGRATED_PRODUCT_DEMO.md) for the complete unified demo experience covering runtime, semantic, and regression layers.
+
 > **This demo shows behavior, not correctness of meaning.**
 
 This document presents a product-facing demonstration of the Semantic Capability Layer operating on top of the frozen PoC v2 runtime.

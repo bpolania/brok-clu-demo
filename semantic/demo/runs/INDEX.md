@@ -2,6 +2,8 @@
 
 **DERIVED, NON-AUTHORITATIVE — References Only**
 
+> **Recommended**: Start with the [Integrated Product Demo](../INTEGRATED_PRODUCT_DEMO.md) for the complete unified demo experience.
+
 This index lists the demo runs performed for Phase S-2 and the exact authoritative output paths generated.
 
 > No copying or rewriting of runtime artifacts.
