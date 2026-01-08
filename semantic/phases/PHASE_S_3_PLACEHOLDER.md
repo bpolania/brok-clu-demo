@@ -1,6 +1,6 @@
 # Phase S-3: Optional Semantic Regression Gate
 
-**Status:** NOT STARTED
+**Status:** IMPLEMENTED (mutable until explicit closure)
 
 ---
 

@@ -1,2 +1,3 @@
 # Demo-layer output artifacts (generated at runtime)
 artifacts/
+semantic/regression/runs/

@@ -1,0 +1,27 @@
+{
+  "generated": "Phase S-3 baseline discovery",
+  "note": "DERIVED, NON-AUTHORITATIVE",
+  "inputs": [
+    {
+      "id": "demo_input_01",
+      "input_string": "restart alpha subsystem gracefully",
+      "baseline_source": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T222101Z/stdout.raw.kv",
+      "baseline_sha256": "7bbc7911582de27e284756450338b6c909f846dc8bdc60f04e9514d40ed728bb",
+      "baseline_origin_phase": "S-1"
+    },
+    {
+      "id": "demo_input_02",
+      "input_string": "graceful restart of alpha",
+      "baseline_source": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T222104Z/stdout.raw.kv",
+      "baseline_sha256": "6fb6bacbd648e42710690d54a337e4d21308b224aaed12c43cbc214827b4d155",
+      "baseline_origin_phase": "S-1"
+    },
+    {
+      "id": "demo_input_03",
+      "input_string": "please restart the alpha subsystem in graceful mode",
+      "baseline_source": "/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/run_20260107T222106Z/stdout.raw.kv",
+      "baseline_sha256": "c09db45880f4ee414a62a7e5b97472305631efb281bf69459059c1f5e1ab02d6",
+      "baseline_origin_phase": "S-1"
+    }
+  ]
+}
