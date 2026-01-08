@@ -125,6 +125,8 @@ Verification confirms:
 
 If verification fails, execution is blocked. See `VERIFY.md` for the complete trust model.
 
+The `docs/proofs/` directory contains frozen audit and validation records preserved for traceability. These files are not required to run the demo and are not part of runtime execution.
+
 ---
 
 ## Example Inputs
