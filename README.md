@@ -107,6 +107,12 @@ After execution, output artifacts are written to:
 
 All other output files are derived and non-authoritative.
 
+To clean generated artifacts (optional):
+
+```sh
+rm -rf artifacts/ semantic/regression/runs/ semantic/artifacts/
+```
+
 ---
 
 ## Verification
