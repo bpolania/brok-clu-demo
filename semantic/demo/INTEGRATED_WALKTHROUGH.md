@@ -154,6 +154,40 @@ cat semantic/regression/reports/regression_matrix.md
 
 ---
 
+## Part D: Semantic Equivalence Evaluation (DERIVED)
+
+### Step D.1: Compare Two Runs
+
+Given two existing run directories, compare them under Rule V1:
+
+```sh
+./semantic/scripts/semantic_equivalence.sh \
+    artifacts/run/run_<timestamp_1> \
+    artifacts/run/run_<timestamp_2>
+```
+
+**Expected exit code:** `0` (evaluation completed, regardless of outcome)
+
+**Possible outcomes:**
+- `EQUIVALENT_UNDER_RULE_V1` — All compared fields match
+- `NOT_EQUIVALENT_UNDER_RULE_V1` — At least one field differs
+- `UNDECIDABLE_UNDER_RULE_V1` — Missing required field(s)
+
+### Step D.2: Compare Multiple Runs
+
+```sh
+./semantic/scripts/semantic_equivalence.sh \
+    artifacts/run/run_<timestamp_1> \
+    artifacts/run/run_<timestamp_2> \
+    artifacts/run/run_<timestamp_3>
+```
+
+**Note:** This tool is read-only. It does not execute PoC v2 or modify any files.
+
+See: [CLI_USAGE.md](../equivalence/CLI_USAGE.md) for full usage documentation.
+
+---
+
 ## Summary of Output Locations
 
 ### Authoritative (Runtime)
@@ -183,6 +217,7 @@ cat semantic/regression/reports/regression_matrix.md
 | `run_poc_v2.sh` | Execution succeeded | Execution failed or operational error |
 | `run_semantic_suite.sh` | Suite completed | Operational error |
 | `run_regression_check.sh` | Always (observational) | Operational error (missing baselines, zero eligible) |
+| `semantic_equivalence.sh` | Evaluation completed (any outcome) | Operational error (invalid paths, < 2 inputs) |
 
 ---
 

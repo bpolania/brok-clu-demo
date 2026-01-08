@@ -241,6 +241,7 @@ See: [INTEGRATED_WALKTHROUGH.md](INTEGRATED_WALKTHROUGH.md) for a linear copy/pa
 | [Phase S-4 Scope Lock](../contract/PHASE_S_4_SCOPE_LOCK.md) | This phase's scope |
 | [PRODUCT_DEMO.md](PRODUCT_DEMO.md) | Semantic demo details (S-2) |
 | [Regression README](../regression/README.md) | Regression gate details (S-3) |
+| [WSE_RULES.md](../equivalence/WSE_RULES.md) | Semantic equivalence rules (S-5) |
 | [INTEGRATED_WALKTHROUGH.md](INTEGRATED_WALKTHROUGH.md) | Copy/paste command sequence |
 
 ---
