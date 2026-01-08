@@ -1,3 +1,2 @@
-# Override parent gitignore for semantic artifacts
-# Semantic artifacts are derived but tracked for attestation
-!artifacts/
+# Semantic layer runtime artifacts are generated and not tracked
+# See root .gitignore for ignore rules

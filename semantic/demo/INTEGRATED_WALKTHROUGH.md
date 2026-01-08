@@ -85,7 +85,7 @@ cat "$(ls -1dt artifacts/run/run_* | head -1)/stdout.raw.kv"
 
 **Expected exit code:** `0`
 
-**Artifacts created:**
+**Artifacts created (generated at runtime, not committed to repository):**
 - `semantic/artifacts/SES_SUMMARY.md` — **DERIVED (semantic)**
 - `semantic/artifacts/ses_001/execution_index.md` — **DERIVED (semantic)**
 - `semantic/artifacts/ses_001/runs/input_*/runtime_ref.txt` — **DERIVED (semantic)**
@@ -119,7 +119,7 @@ cat semantic/artifacts/ses_001/runs/input_03/runtime_ref.txt
 
 **Expected exit code:** `0` (observational only, exits 0 regardless of regression status)
 
-**Artifacts created:**
+**Artifacts created (generated at runtime, not committed to repository):**
 - `semantic/regression/runs/run_<timestamp>/SUMMARY.json` — **DERIVED (semantic)**
 - `semantic/regression/runs/run_<timestamp>/INDEX.md` — **DERIVED (semantic)**
 - `semantic/regression/runs/run_<timestamp>/per_input/*.json` — **DERIVED (semantic)**
