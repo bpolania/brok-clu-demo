@@ -6,6 +6,14 @@
 
 ---
 
+## Output Authority
+
+**`stdout.raw.kv` is the only authoritative output.** All other views (JSON, summaries, reports, indexes) are derived and non-authoritative.
+
+For terminology clarification, see [Glossary](INTEGRATED_PRODUCT_DEMO.md#glossary).
+
+---
+
 ## Before You Start
 
 Ensure you are in the repository root:

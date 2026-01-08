@@ -10,6 +10,8 @@
 
 Brok-CLU is a compiled Constrained Language Understanding system that produces verified, deterministic outputs from natural language inputs.
 
+This demo shows behavior, not correctness of meaning.
+
 ---
 
 ## Problem Statement
@@ -36,6 +38,8 @@ Brok-CLU is a compiled Constrained Language Understanding system that produces v
 
 ## Authoritative vs Derived Outputs
 
+**The only authoritative output is `stdout.raw.kv`.**
+
 | Label | Output Type | Example |
 |-------|-------------|---------|
 | **AUTHORITATIVE (runtime)** | PoC v2 execution output | `artifacts/run/run_<timestamp>/stdout.raw.kv` |
@@ -43,6 +47,14 @@ Brok-CLU is a compiled Constrained Language Understanding system that produces v
 | **DERIVED (semantic)** | Execution indexes | `semantic/artifacts/ses_001/execution_index.md` |
 | **DERIVED (semantic)** | Regression reports | `semantic/regression/reports/*.md` |
 | **DERIVED (semantic)** | This documentation | All markdown files |
+
+**Derived artifacts are illustrative only.** The following are all derived and non-authoritative:
+
+- JSON views (`stdout.derived.json`)
+- Semantic summaries and indexes
+- Regression reports and matrices
+- Runtime reference files
+- All markdown documentation
 
 **Rule**: Only `stdout.raw.kv` is authoritative. Everything else is derived, observational, and non-authoritative.
 
@@ -98,6 +110,8 @@ Divergence between inputs is shown openly, not hidden.
 ---
 
 ### B. Semantic Behavior Surfacing (DERIVED, observational)
+
+This demo shows behavior, not correctness of meaning.
 
 **What it demonstrates:**
 - Curated inputs processed through PoC v2
@@ -194,6 +208,28 @@ See: [INTEGRATED_WALKTHROUGH.md](INTEGRATED_WALKTHROUGH.md) for a linear copy/pa
 3. Confirm `stdout.raw.kv` is the only authoritative output
 4. Verify byte-for-byte comparison methods (SHA-256, `cmp -s`)
 5. Review regression gate constraints (no semantic tolerance)
+
+---
+
+## Glossary
+
+### intent_id
+
+`intent_id` is an internal identifier used for traceability within the compiled CLU artifact.
+
+- Its numeric value has no semantic meaning guarantee.
+- Equality or inequality of `intent_id` values across runs does not imply correctness or incorrectness.
+- It is not a quality signal.
+- It should not be used to infer semantic behavior.
+
+### dispatch=unknown
+
+`dispatch=unknown` is a field value that may appear in output.
+
+- It is not an error.
+- It indicates no explicit dispatch classification was applied.
+- It does not affect runtime guarantees (verification, execution, determinism).
+- No semantic interpretation should be drawn from this value.
 
 ---
 
