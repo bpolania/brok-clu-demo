@@ -1,2 +1,7 @@
 # Demo-layer output artifacts (generated at runtime)
 artifacts/
+semantic/regression/runs/
+semantic/artifacts/
+
+# Local IDE/tool settings
+.claude/settings.local.json
