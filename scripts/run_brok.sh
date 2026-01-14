@@ -126,13 +126,21 @@ if [[ ! -f "$INPUT_FILE" ]]; then
     exit 1
 fi
 
-# Compute repo-relative input_ref
+# --- Input Reference Handling ---
+# Artifacts must NOT contain absolute paths. If input is outside the repo,
+# we copy it to artifacts/inputs/<run-id>/input.raw and reference that.
+
 INPUT_ABS="$(cd "$(dirname "$INPUT_FILE")" && pwd)/$(basename "$INPUT_FILE")"
 if [[ "$INPUT_ABS" == "$REPO_ROOT"/* ]]; then
+    # Input is within repo - use repo-relative path
     INPUT_REF="${INPUT_ABS#$REPO_ROOT/}"
 else
-    # Use absolute path as-is for external files (will be recorded)
-    INPUT_REF="$INPUT_FILE"
+    # Input is outside repo - copy to artifacts/inputs/<run-id>/
+    # This ensures artifact contains only repo-relative references
+    ARTIFACT_INPUT_DIR="$REPO_ROOT/artifacts/inputs/$RUN_ID"
+    mkdir -p "$ARTIFACT_INPUT_DIR"
+    cp "$INPUT_FILE" "$ARTIFACT_INPUT_DIR/input.raw"
+    INPUT_REF="artifacts/inputs/$RUN_ID/input.raw"
 fi
 
 # === Step 1: Generate Proposals (M-1) ===

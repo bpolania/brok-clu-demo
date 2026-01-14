@@ -115,6 +115,8 @@ def validate_artifact(data: dict) -> Tuple[bool, List[str]]:
         errors.append("INPUT_REF_NOT_STRING")
     elif len(input_ref) > MAX_REF_LENGTH:
         errors.append(f"INPUT_REF_TOO_LONG:max={MAX_REF_LENGTH}")
+    elif input_ref.startswith('/'):
+        errors.append("INPUT_REF_ABSOLUTE_PATH")
 
     # Validate proposal_set_ref
     proposal_set_ref = data["proposal_set_ref"]
@@ -122,6 +124,8 @@ def validate_artifact(data: dict) -> Tuple[bool, List[str]]:
         errors.append("PROPOSAL_SET_REF_NOT_STRING")
     elif len(proposal_set_ref) > MAX_REF_LENGTH:
         errors.append(f"PROPOSAL_SET_REF_TOO_LONG:max={MAX_REF_LENGTH}")
+    elif proposal_set_ref.startswith('/'):
+        errors.append("PROPOSAL_SET_REF_ABSOLUTE_PATH")
 
     # Validate decision
     if not isinstance(decision, str):

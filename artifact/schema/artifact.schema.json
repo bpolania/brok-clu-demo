@@ -21,12 +21,14 @@
     "input_ref": {
       "type": "string",
       "maxLength": 512,
-      "description": "Repo-relative path to input file. No absolute paths."
+      "pattern": "^[^/]",
+      "description": "Repo-relative path to input file. Must not start with '/' (no absolute paths). External inputs are copied to artifacts/inputs/<run-id>/input.raw."
     },
     "proposal_set_ref": {
       "type": "string",
       "maxLength": 512,
-      "description": "Repo-relative path to proposal_set.json. No absolute paths."
+      "pattern": "^[^/]",
+      "description": "Repo-relative path to proposal_set.json. Must not start with '/' (no absolute paths)."
     },
     "decision": {
       "type": "string",

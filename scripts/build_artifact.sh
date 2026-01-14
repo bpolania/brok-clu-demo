@@ -122,6 +122,14 @@ if ! validate_run_id "$RUN_ID"; then
     exit 1
 fi
 
+# Validate input-ref is not an absolute path
+# Artifacts must NOT contain absolute paths for relocatability
+if [[ "$INPUT_REF" == /* ]]; then
+    echo "Error: --input-ref must be repo-relative, not absolute: $INPUT_REF" >&2
+    echo "  Use run_brok.sh which handles external inputs correctly." >&2
+    exit 1
+fi
+
 # Check proposal-set file exists
 if [[ ! -f "$PROPOSAL_SET" ]]; then
     echo "Error: Proposal set file not found: $PROPOSAL_SET" >&2
