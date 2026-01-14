@@ -177,8 +177,10 @@ The following must be gitignored:
 | Pattern | Rationale |
 |---------|-----------|
 | `artifacts/` | Generated outputs are ephemeral |
-| Runtime extraction directories | Temporary execution state |
-| Build intermediates | Not part of source |
+| `artifacts/exec_bundle/` | PoC v2 extraction during execution |
+| `artifacts/poc_v2_extracted/` | PoC v2 extraction during verification |
+| `semantic/regression/runs/` | Semantic regression test outputs |
+| `semantic/artifacts/` | Semantic layer generated artifacts |
 
 ### 8.3 Commit Prohibition
 
