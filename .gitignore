@@ -1,11 +1,15 @@
 # Demo-layer output artifacts (generated at runtime)
+# All generated outputs MUST live under artifacts/ (Phase M-0 constraint)
 artifacts/
+
+# Semantic layer outputs
 semantic/regression/runs/
 semantic/artifacts/
 
 # Python bytecode (Phase M-1 proposal generator)
 __pycache__/
 *.pyc
+*.pyo
 
 # Local IDE/tool settings
 .claude/settings.local.json

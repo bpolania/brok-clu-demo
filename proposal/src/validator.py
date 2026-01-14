@@ -2,10 +2,27 @@
 """
 Phase M-1 Proposal Validator
 
-Validates ProposalSet JSON against the m1.0 schema.
-Returns validation result without external dependencies.
+Performs spec-aligned structural validation of ProposalSet documents.
+Uses Python standard library only (no external dependencies).
 
-This validator is deterministic and does not read environment variables or time.
+The JSON Schema file (proposal/schema/proposal_set.schema.json) serves as the
+specification reference. This validator implements explicit structural checks
+equivalent to those schema constraints:
+
+- Required fields and types
+- String length bounds (input.raw max 4096, error entries max 256)
+- Array item limits (proposals max 8, errors max 16)
+- Closed enum membership (kind, intent, target, mode)
+- Additional properties rejection (unknown fields rejected at all levels)
+
+Implementation note: This is NOT a JSON Schema validation engine. It performs
+deterministic, explicit checks that enforce the same constraints as the schema.
+
+Guarantees:
+- Deterministic: same input always produces same validation result
+- No environment variables or time dependencies
+- Bounded error output (max 16 error codes)
+- Error codes are non-authoritative (do not imply decisions)
 """
 
 from typing import List, Tuple

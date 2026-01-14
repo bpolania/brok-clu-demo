@@ -7,6 +7,8 @@ Tests cover:
 - Boundedness: overlong input produces zero proposals
 - Whitespace semantics: empty and whitespace-only inputs
 - Validation: generator output validates; malformed output fails
+- Unknown field rejection (additionalProperties enforcement)
+- Bounded error output
 
 These tests are isolated from PoC v2 tests.
 """
@@ -26,7 +28,11 @@ from generator import (
     MAX_INPUT_LENGTH,
     MAX_PROPOSALS
 )
-from validator import validate_proposal_set, validate_and_normalize
+from validator import (
+    validate_proposal_set,
+    validate_and_normalize,
+    MAX_ERRORS
+)
 
 
 class TestDeterminism(unittest.TestCase):
@@ -275,6 +281,128 @@ class TestNonAuthority(unittest.TestCase):
         json_str = proposal_set_to_json(result)
         # Should not have status=ACCEPT or status=REJECT
         self.assertNotIn('"status"', json_str)
+
+
+class TestAdditionalPropertiesRejection(unittest.TestCase):
+    """Test that unknown fields are rejected at all levels (additionalProperties: false)."""
+
+    def test_reject_unknown_root_fields(self):
+        """Unknown fields at root level must be rejected."""
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test"},
+            "proposals": [],
+            "unknown_field": "should_fail"
+        }
+        is_valid, errors = validate_proposal_set(data)
+        self.assertFalse(is_valid)
+        self.assertTrue(any("UNEXPECTED_ROOT_FIELDS" in e for e in errors))
+
+    def test_reject_unknown_input_fields(self):
+        """Unknown fields in input object must be rejected."""
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test", "extra": "bad"},
+            "proposals": []
+        }
+        is_valid, errors = validate_proposal_set(data)
+        self.assertFalse(is_valid)
+        self.assertTrue(any("UNEXPECTED_INPUT_FIELDS" in e for e in errors))
+
+    def test_reject_unknown_proposal_fields(self):
+        """Unknown fields in proposal object must be rejected."""
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test"},
+            "proposals": [{
+                "kind": "ROUTE_CANDIDATE",
+                "payload": {"intent": "RESTART_SUBSYSTEM", "slots": {"target": "alpha"}},
+                "extra_field": "bad"
+            }]
+        }
+        is_valid, errors = validate_proposal_set(data)
+        self.assertFalse(is_valid)
+        self.assertTrue(any("UNEXPECTED_FIELDS" in e for e in errors))
+
+    def test_reject_unknown_payload_fields(self):
+        """Unknown fields in payload object must be rejected."""
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test"},
+            "proposals": [{
+                "kind": "ROUTE_CANDIDATE",
+                "payload": {
+                    "intent": "RESTART_SUBSYSTEM",
+                    "slots": {"target": "alpha"},
+                    "unknown": "bad"
+                }
+            }]
+        }
+        is_valid, errors = validate_proposal_set(data)
+        self.assertFalse(is_valid)
+        self.assertTrue(any("PAYLOAD_UNEXPECTED_FIELDS" in e for e in errors))
+
+    def test_reject_unknown_slots_fields(self):
+        """Unknown fields in slots object must be rejected."""
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test"},
+            "proposals": [{
+                "kind": "ROUTE_CANDIDATE",
+                "payload": {
+                    "intent": "RESTART_SUBSYSTEM",
+                    "slots": {"target": "alpha", "unknown_slot": "bad"}
+                }
+            }]
+        }
+        is_valid, errors = validate_proposal_set(data)
+        self.assertFalse(is_valid)
+        self.assertTrue(any("SLOTS_UNEXPECTED_FIELDS" in e for e in errors))
+
+
+class TestBoundedErrors(unittest.TestCase):
+    """Test that error output is bounded."""
+
+    def test_errors_bounded_by_max(self):
+        """Error array in normalized output must not exceed MAX_ERRORS."""
+        # Create something that will generate many errors
+        malformed = {
+            "schema_version": "wrong",
+            "input": "not_an_object",
+            "proposals": "not_an_array",
+            "extra1": 1, "extra2": 2, "extra3": 3,
+        }
+        result = validate_and_normalize(malformed)
+
+        if "errors" in result:
+            self.assertLessEqual(len(result["errors"]), MAX_ERRORS)
+
+    def test_validate_and_normalize_bounds_errors(self):
+        """validate_and_normalize must truncate errors to MAX_ERRORS."""
+        # Construct a case with many validation errors
+        many_proposals = [
+            {"kind": "INVALID_KIND_" + str(i), "payload": {"intent": "INVALID", "slots": {}}}
+            for i in range(20)
+        ]
+        data = {
+            "schema_version": SCHEMA_VERSION,
+            "input": {"raw": "test"},
+            "proposals": many_proposals
+        }
+        result = validate_and_normalize(data)
+
+        self.assertEqual(result["proposals"], [])
+        self.assertIn("errors", result)
+        self.assertLessEqual(len(result["errors"]), MAX_ERRORS)
+
+    def test_error_codes_are_deterministic(self):
+        """Error codes must be deterministic (same input = same errors)."""
+        malformed = {"garbage": True, "more_garbage": False}
+
+        result1 = validate_and_normalize(malformed)
+        result2 = validate_and_normalize(malformed)
+
+        self.assertEqual(result1["errors"], result2["errors"])
 
 
 if __name__ == "__main__":

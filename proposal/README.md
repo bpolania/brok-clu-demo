@@ -58,11 +58,27 @@ Zero proposals is a valid outcome. There are no fallback heuristics.
 
 ---
 
-## Schema
+## Schema and Validation
+
+### Schema Specification
 
 Schema version: `m1.0`
 
 Location: `proposal/schema/proposal_set.schema.json`
+
+The JSON Schema file serves as the **specification reference** for the ProposalSet format. It documents the structural constraints, bounds, and closed enums that define valid ProposalSet documents.
+
+### Validation Implementation
+
+The validator (`proposal/src/validator.py`) performs **spec-aligned structural validation** using Python standard library only (no external dependencies). The validator explicitly checks all constraints defined in the schema specification:
+
+- Required fields and types
+- String length bounds
+- Array item limits
+- Closed enum membership
+- Additional properties rejection (`additionalProperties: false` equivalent)
+
+**Implementation note:** The validator does not use a JSON Schema validation engine. It implements deterministic, explicit structural checks equivalent to the schema constraints.
 
 ### ProposalSet Structure
 
@@ -120,6 +136,16 @@ echo "restart alpha subsystem gracefully" | ./scripts/generate_proposals.sh --in
 # Output written to: artifacts/proposals/test001/proposal_set.json
 ```
 
+**Run ID constraints:**
+- Allowed characters: `A-Za-z0-9._-`
+- Maximum length: 64 characters
+- No automatic timestamp generation
+
+**Output constraints:**
+- All generated outputs MUST live under `artifacts/`
+- Output is always written to stdout
+- File output only via `--run-id` (writes to `artifacts/proposals/<run-id>/proposal_set.json`)
+
 ---
 
 ## Running Tests
@@ -133,6 +159,7 @@ Tests verify:
 - Boundedness (input/output limits enforced)
 - Whitespace semantics (preserved exactly)
 - Validation (generator output always validates)
+- Unknown field rejection (additionalProperties enforcement)
 
 ---
 
@@ -142,11 +169,11 @@ Tests verify:
 proposal/
 ├── README.md                          # This file
 ├── schema/
-│   └── proposal_set.schema.json       # JSON Schema (m1.0)
+│   └── proposal_set.schema.json       # Schema specification (reference)
 ├── src/
 │   ├── __init__.py
 │   ├── generator.py                   # Proposal generator
-│   └── validator.py                   # Schema validator
+│   └── validator.py                   # Spec-aligned validator (stdlib-only)
 └── tests/
     ├── __init__.py
     └── test_proposals.py              # Unit tests
@@ -180,7 +207,19 @@ These constraints are binding for Phase M-1 and must not be violated:
 
 1. Proposals must never contain authority indicators
 2. Zero proposals must be valid for any input
-3. Output must be deterministic and schema-validated
+3. Output must be deterministic and spec-validated
 4. No LLMs or learned models in proposal generation
 5. No dependency on semantic/ S-phase tooling
 6. All generated outputs under `artifacts/` (gitignored)
+7. Python standard library only (no external dependencies)
+
+---
+
+## Verification
+
+To verify artifacts are properly gitignored:
+
+```sh
+git check-ignore -v artifacts/proposals/test/proposal_set.json
+# Expected: .gitignore:2:artifacts/  artifacts/proposals/test/proposal_set.json
+```
