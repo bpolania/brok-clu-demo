@@ -158,6 +158,42 @@ class TestValidatorRejectsAbsolutePaths(unittest.TestCase):
         self.assertFalse(is_valid)
         self.assertIn("PROPOSAL_SET_REF_ABSOLUTE_PATH", errors)
 
+    def test_validator_rejects_windows_drive_path_input_ref(self):
+        """Validator must reject Windows drive letter paths in input_ref."""
+        artifact = self._make_artifact(
+            input_ref="C:\\temp\\file.txt",
+            proposal_set_ref="artifacts/proposals/test/proposal_set.json"
+        )
+
+        is_valid, errors = validate_artifact(artifact)
+
+        self.assertFalse(is_valid)
+        self.assertIn("INPUT_REF_ABSOLUTE_PATH", errors)
+
+    def test_validator_rejects_windows_unc_path_input_ref(self):
+        """Validator must reject Windows UNC paths in input_ref."""
+        artifact = self._make_artifact(
+            input_ref="\\\\server\\share\\file.txt",
+            proposal_set_ref="artifacts/proposals/test/proposal_set.json"
+        )
+
+        is_valid, errors = validate_artifact(artifact)
+
+        self.assertFalse(is_valid)
+        self.assertIn("INPUT_REF_ABSOLUTE_PATH", errors)
+
+    def test_validator_rejects_windows_drive_path_proposal_set_ref(self):
+        """Validator must reject Windows drive letter paths in proposal_set_ref."""
+        artifact = self._make_artifact(
+            input_ref="artifacts/inputs/test/input.raw",
+            proposal_set_ref="D:\\proposals\\proposal_set.json"
+        )
+
+        is_valid, errors = validate_artifact(artifact)
+
+        self.assertFalse(is_valid)
+        self.assertIn("PROPOSAL_SET_REF_ABSOLUTE_PATH", errors)
+
     def test_validator_accepts_repo_relative_refs(self):
         """Validator must accept repo-relative refs."""
         artifact = self._make_artifact(

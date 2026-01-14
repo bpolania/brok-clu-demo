@@ -51,6 +51,20 @@ VALID_REASON_CODES = frozenset(["NO_PROPOSALS", "AMBIGUOUS_PROPOSALS", "INVALID_
 # Patterns
 RUN_ID_PATTERN = re.compile(r'^[A-Za-z0-9._-]+$')
 NOTE_PATTERN = re.compile(r'^[A-Z0-9_:]+$')
+# Windows absolute path patterns (drive letter or UNC)
+WINDOWS_DRIVE_PATTERN = re.compile(r'^[A-Za-z]:[\\/]')
+WINDOWS_UNC_PATTERN = re.compile(r'^\\\\')
+
+
+def _is_absolute_path(path: str) -> bool:
+    """Check if path is absolute (Unix or Windows style)."""
+    if path.startswith('/'):
+        return True
+    if WINDOWS_DRIVE_PATTERN.match(path):
+        return True
+    if WINDOWS_UNC_PATTERN.match(path):
+        return True
+    return False
 
 
 def validate_artifact(data: dict) -> Tuple[bool, List[str]]:
@@ -115,7 +129,7 @@ def validate_artifact(data: dict) -> Tuple[bool, List[str]]:
         errors.append("INPUT_REF_NOT_STRING")
     elif len(input_ref) > MAX_REF_LENGTH:
         errors.append(f"INPUT_REF_TOO_LONG:max={MAX_REF_LENGTH}")
-    elif input_ref.startswith('/'):
+    elif _is_absolute_path(input_ref):
         errors.append("INPUT_REF_ABSOLUTE_PATH")
 
     # Validate proposal_set_ref
@@ -124,7 +138,7 @@ def validate_artifact(data: dict) -> Tuple[bool, List[str]]:
         errors.append("PROPOSAL_SET_REF_NOT_STRING")
     elif len(proposal_set_ref) > MAX_REF_LENGTH:
         errors.append(f"PROPOSAL_SET_REF_TOO_LONG:max={MAX_REF_LENGTH}")
-    elif proposal_set_ref.startswith('/'):
+    elif _is_absolute_path(proposal_set_ref):
         errors.append("PROPOSAL_SET_REF_ABSOLUTE_PATH")
 
     # Validate decision
