@@ -10,6 +10,8 @@ Orchestrates the full pipeline with structured output and enforced boundaries:
 This module uses the ExecutionGateway to enforce that execution
 can only occur with a validated ACCEPT artifact.
 
+Phase M-4 observability is integrated to provide deterministic traceability.
+
 Usage:
     python3 -m m3.src.orchestrator --input <file> --run-id <id>
 """
@@ -20,7 +22,10 @@ import json
 import subprocess
 import hashlib
 import argparse
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from m4.src.observability import PipelineObserver
 
 # Setup paths
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -213,6 +218,23 @@ def build_and_save_artifact(
         return None, artifact_path, f"Artifact build error: {type(e).__name__}: {e}"
 
 
+def _get_observer(repo_root: str) -> Optional["PipelineObserver"]:
+    """
+    Get M-4 observer if available.
+
+    Returns None if M-4 module is not available (graceful degradation).
+    """
+    try:
+        m4_src = os.path.join(repo_root, 'm4', 'src')
+        if os.path.isdir(m4_src):
+            sys.path.insert(0, m4_src)
+            from observability import PipelineObserver
+            return PipelineObserver(repo_root)
+    except ImportError:
+        pass
+    return None
+
+
 def run_pipeline(
     input_file: str,
     run_id: str,
@@ -231,6 +253,9 @@ def run_pipeline(
     Returns:
         Exit code (0 for success, non-zero for operational failure)
     """
+    # Initialize M-4 observability (optional, does not affect behavior)
+    observer = _get_observer(repo_root)
+
     # Print header
     if verbose:
         print_pipeline_header()
@@ -246,8 +271,14 @@ def run_pipeline(
         print(f"ERROR: Input file not found: {input_file}", file=sys.stderr)
         return 1
 
-    # Ensure input is repo-relative
+    # Ensure input is repo-relative (may copy external files to artifacts/)
     input_ref = ensure_input_in_artifacts(input_file, run_id, repo_root)
+
+    # M-4: Record run start (use the repo-relative input path)
+    if observer:
+        # Use the file that's now guaranteed to be under repo
+        input_for_observer = os.path.join(repo_root, input_ref)
+        observer.start_run(input_for_observer)
 
     # === Stage 1: Proposal Generation ===
     proposal_set, proposal_set_path, error = run_proposal_generator(
@@ -260,6 +291,11 @@ def run_pipeline(
 
     # Make proposal_set_ref repo-relative
     proposal_set_ref = os.path.relpath(proposal_set_path, repo_root)
+
+    # M-4: Record proposal generation
+    proposal_count = len(proposal_set.get("proposals", [])) if proposal_set else 0
+    if observer:
+        observer.record_proposal(proposal_set_path, proposal_count)
 
     if verbose:
         format_proposal_section(proposal_set, proposal_set_ref)
@@ -275,18 +311,39 @@ def run_pipeline(
 
     artifact_ref = os.path.relpath(artifact_path, repo_root)
 
+    # M-4: Record artifact construction
+    decision = artifact.get("decision")
+    if observer:
+        observer.record_artifact(artifact_path, decision)
+
     if verbose:
         format_artifact_section(artifact, artifact_ref)
 
     # === Stage 3: Execution (via Gateway) ===
-    decision = artifact.get("decision")
     reject_payload = artifact.get("reject_payload", {})
     reason_code = reject_payload.get("reason_code")
+
+    # M-4: Record gate decision
+    if observer:
+        observer.record_gate_decision(decision, reason_code)
 
     gateway = ExecutionGateway(repo_root)
 
     try:
         result = gateway.execute_if_accepted(artifact, input_file)
+
+        # M-4: Record execution outcome
+        if observer:
+            if result.executed:
+                observer.record_execution_start()
+                observer.record_execution_complete(
+                    result.run_directory,
+                    result.exit_code or 0
+                )
+            else:
+                observer.record_execution_skip(
+                    f"decision={decision}" if decision == "REJECT" else "execution_failed"
+                )
 
         if verbose:
             format_execution_section(
@@ -303,6 +360,12 @@ def run_pipeline(
             executed=result.executed,
             reason_code=reason_code
         )
+
+        # M-4: Finalize and print summary
+        if observer:
+            observer.finalize()
+            if verbose:
+                observer.print_summary()
 
         if verbose:
             print_pipeline_footer()
