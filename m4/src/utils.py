@@ -14,7 +14,17 @@ No timestamps, no machine identifiers, no randomness.
 import hashlib
 import json
 import os
+import re
 from typing import Any, List, Optional
+
+
+# Patterns for timestamp detection in strings
+# M-3 run directory pattern: run_YYYYMMDDTHHMMSSZ
+RUN_DIR_TIMESTAMP_PATTERN = re.compile(r'run_\d{8}T\d{6}Z')
+# ISO 8601 datetime pattern embedded in strings
+ISO_DATETIME_IN_STRING_PATTERN = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
+# Date-like patterns that indicate non-determinism
+DATE_PATTERN = re.compile(r'\d{4}[-/]\d{2}[-/]\d{2}')
 
 
 class PathSafetyError(Exception):
@@ -138,8 +148,9 @@ def validate_no_timestamps(data: Any, path: str = "root") -> List[str]:
 
     Checks for:
     - Keys that are exactly timestamp indicators (timestamp, created_at, etc.)
-    - ISO 8601 date strings (YYYY-MM-DDTHH:MM:SS)
+    - ISO 8601 date strings (YYYY-MM-DDTHH:MM:SS) anywhere in string values
     - Unix epoch integers (> 1000000000)
+    - M-3 run directory patterns (run_YYYYMMDDTHHMMSSZ) embedded in paths
 
     Args:
         data: Data structure to validate
@@ -171,13 +182,12 @@ def validate_no_timestamps(data: Any, path: str = "root") -> List[str]:
         if data > 1000000000 and data < 4000000000:
             errors.append(f"Epoch-like integer at {path}: {data}")
     elif isinstance(data, str):
-        # Check for ISO 8601 patterns with time component (YYYY-MM-DDTHH:MM:SS)
-        if len(data) >= 19 and data[10:11] == 'T':
-            # Check for full ISO datetime pattern
-            if (data[4:5] == '-' and data[7:8] == '-' and
-                data[13:14] == ':' and data[16:17] == ':' and
-                data[:4].isdigit() and data[5:7].isdigit() and data[8:10].isdigit()):
-                errors.append(f"ISO datetime string at {path}: {data}")
+        # Check for M-3 run directory timestamp pattern (run_YYYYMMDDTHHMMSSZ)
+        if RUN_DIR_TIMESTAMP_PATTERN.search(data):
+            errors.append(f"Run directory timestamp pattern at {path}: {data}")
+        # Check for ISO 8601 datetime patterns embedded in strings
+        elif ISO_DATETIME_IN_STRING_PATTERN.search(data):
+            errors.append(f"ISO datetime pattern in string at {path}: {data}")
 
     return errors
 

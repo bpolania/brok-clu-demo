@@ -51,22 +51,29 @@ class ManifestBuilder:
         self._stages: List[Dict[str, Any]] = []
         self._authoritative_outputs: List[str] = []
         self._derived_outputs: List[str] = []
+        self._execution_recorded: bool = False
+        self._executed: bool = False
 
     def set_input(self, input_path: str) -> None:
         """
         Record the input file.
 
         Args:
-            input_path: Path to input file (will be converted to relative)
+            input_path: Path to input file (may be external to repo)
+
+        Note: For external inputs (outside repo), records "[external]:<basename>"
+        as the path marker. Always hashes the actual file content.
         """
-        self._input_path_rel = to_rel_path(self.repo_root, input_path)
+        # Use allow_external=True to get "[external]:<basename>" for external paths
+        self._input_path_rel = to_rel_path(self.repo_root, input_path, allow_external=True)
         self._input_sha256 = sha256_file(input_path)
 
     def add_artifact(
         self,
         path: str,
         artifact_type: str,
-        authoritative: bool = False
+        authoritative: bool = False,
+        omit_path: bool = False
     ) -> None:
         """
         Record an artifact produced during the run.
@@ -75,29 +82,44 @@ class ManifestBuilder:
             path: Path to artifact file
             artifact_type: Type identifier (e.g., "proposal_set", "artifact", "stdout.raw.kv")
             authoritative: Whether this is an authoritative output
+            omit_path: If True, record only the hash (for artifacts with non-deterministic paths)
         """
         if not os.path.isfile(path):
             return  # Skip non-existent artifacts
 
-        rel_path = to_rel_path(self.repo_root, path)
         sha = sha256_file(path)
 
-        self._artifacts.append({
-            "type": artifact_type,
-            "path": rel_path,
-            "sha256": sha
-        })
-
-        if authoritative:
-            self._authoritative_outputs.append(rel_path)
+        if omit_path:
+            # For stdout.raw.kv: record only type and hash, no path
+            # This avoids embedding timestamped M-3 run directory paths
+            self._artifacts.append({
+                "type": artifact_type,
+                "sha256": sha
+            })
+            # W1 FIX: For authoritative path-omitted artifacts, use type as identifier
+            # This ensures authority_boundary.authoritative_outputs correctly reflects
+            # that stdout.raw.kv was produced even when we can't record its path
+            if authoritative:
+                self._authoritative_outputs.append(artifact_type)
         else:
-            self._derived_outputs.append(rel_path)
+            rel_path = to_rel_path(self.repo_root, path)
+            self._artifacts.append({
+                "type": artifact_type,
+                "path": rel_path,
+                "sha256": sha
+            })
+
+            if authoritative:
+                self._authoritative_outputs.append(rel_path)
+            else:
+                self._derived_outputs.append(rel_path)
 
     def add_stage(
         self,
         name: str,
         status: str,
-        outputs: Optional[List[str]] = None
+        outputs: Optional[List[str]] = None,
+        omit_outputs: bool = False
     ) -> None:
         """
         Record a stage execution.
@@ -106,17 +128,28 @@ class ManifestBuilder:
             name: Stage name (e.g., "PROPOSAL", "ARTIFACT", "EXECUTION")
             status: Status code (OK, SKIP, FAIL)
             outputs: List of output paths (relative)
+            omit_outputs: If True, don't record output paths (for non-deterministic paths)
         """
         stage_record = {
             "name": name,
             "status": status
         }
-        if outputs:
+        if outputs and not omit_outputs:
             stage_record["outputs"] = [
                 to_rel_path(self.repo_root, p) if os.path.isabs(p) else p
                 for p in outputs
             ]
         self._stages.append(stage_record)
+
+    def record_execution(self, executed: bool) -> None:
+        """
+        Record whether execution occurred.
+
+        Args:
+            executed: True if PoC v2 was invoked, False if skipped
+        """
+        self._execution_recorded = True
+        self._executed = executed
 
     def get_run_id(self) -> str:
         """
@@ -149,6 +182,12 @@ class ManifestBuilder:
         """
         run_id = self.get_run_id()
 
+        # Sort artifacts by type (path may be missing for stdout.raw.kv)
+        sorted_artifacts = sorted(
+            self._artifacts,
+            key=lambda x: (x["type"], x.get("path", ""))
+        )
+
         manifest = {
             "schema_version": MANIFEST_SCHEMA_VERSION,
             "run_id": run_id,
@@ -156,7 +195,7 @@ class ManifestBuilder:
                 "input_path_rel": self._input_path_rel,
                 "input_sha256": self._input_sha256
             },
-            "artifacts": sorted(self._artifacts, key=lambda x: x["path"]),
+            "artifacts": sorted_artifacts,
             "stages": self._stages,  # Keep insertion order
             "authority_boundary": {
                 "authoritative_outputs": sorted(self._authoritative_outputs),
@@ -167,6 +206,10 @@ class ManifestBuilder:
                 "no_absolute_paths": True
             }
         }
+
+        # Add execution field if recorded
+        if self._execution_recorded:
+            manifest["execution"] = {"executed": self._executed}
 
         # Validate manifest before returning
         path_errors = validate_no_absolute_paths(manifest)

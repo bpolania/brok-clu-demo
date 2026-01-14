@@ -105,36 +105,30 @@ def validate_run_id(run_id: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
-def ensure_input_in_artifacts(
+def get_input_ref(
     input_file: str,
-    run_id: str,
     repo_root: str
 ) -> str:
     """
-    Ensure input file is referenced from within artifacts/.
+    Get a reference string for the input file.
 
-    If input is outside repo, copy to artifacts/inputs/<run-id>/input.raw.
+    If input is within repo, returns repo-relative path.
+    If input is external, returns "[external]:<basename>" marker.
+
+    This function does NOT copy files. It only computes the reference.
 
     Returns:
-        Repo-relative path to input
+        Reference string for artifact input_ref field
     """
     input_abs = os.path.abspath(input_file)
+    repo_root_abs = os.path.abspath(repo_root)
 
-    if input_abs.startswith(repo_root + os.sep):
+    if input_abs.startswith(repo_root_abs + os.sep):
         # Input is within repo - use relative path
-        return os.path.relpath(input_abs, repo_root)
+        return os.path.relpath(input_abs, repo_root_abs).replace(os.sep, '/')
     else:
-        # Input is outside repo - copy to artifacts
-        artifact_input_dir = os.path.join(repo_root, 'artifacts', 'inputs', run_id)
-        os.makedirs(artifact_input_dir, exist_ok=True)
-        dest_path = os.path.join(artifact_input_dir, 'input.raw')
-
-        with open(input_file, 'rb') as src:
-            content = src.read()
-        with open(dest_path, 'wb') as dst:
-            dst.write(content)
-
-        return f"artifacts/inputs/{run_id}/input.raw"
+        # Input is outside repo - use marker (no copying)
+        return f"[external]:{os.path.basename(input_file)}"
 
 
 def run_proposal_generator(
@@ -271,14 +265,14 @@ def run_pipeline(
         print(f"ERROR: Input file not found: {input_file}", file=sys.stderr)
         return 1
 
-    # Ensure input is repo-relative (may copy external files to artifacts/)
-    input_ref = ensure_input_in_artifacts(input_file, run_id, repo_root)
+    # Get input reference for artifact (repo-relative or [external]:basename marker)
+    # This does NOT copy files - observation without interference
+    input_ref = get_input_ref(input_file, repo_root)
 
-    # M-4: Record run start (use the repo-relative input path)
+    # M-4: Record run start with the ORIGINAL input file path
+    # Observer handles external paths by recording "[external]:<basename>" marker
     if observer:
-        # Use the file that's now guaranteed to be under repo
-        input_for_observer = os.path.join(repo_root, input_ref)
-        observer.start_run(input_for_observer)
+        observer.start_run(input_file)
 
     # === Stage 1: Proposal Generation ===
     proposal_set, proposal_set_path, error = run_proposal_generator(

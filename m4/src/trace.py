@@ -17,7 +17,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from utils import to_rel_path, sha256_file
+from utils import to_rel_path, sha256_file, validate_no_absolute_paths, validate_no_timestamps
 
 
 # Event type tokens
@@ -52,11 +52,11 @@ class TraceWriter:
         self._events: List[Dict[str, Any]] = []
         self._seq = 0
 
-    def _make_rel_path(self, path: str) -> str:
+    def _make_rel_path(self, path: str, allow_external: bool = False) -> str:
         """Convert path to repo-relative form."""
         if not path:
             return ""
-        return to_rel_path(self.repo_root, path)
+        return to_rel_path(self.repo_root, path, allow_external=allow_external)
 
     def _emit(self, event: str, stage: str, detail: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -66,6 +66,9 @@ class TraceWriter:
             event: Event type token
             stage: Stage name
             detail: Optional details dict (must be deterministic)
+
+        Raises:
+            ValueError: If event contains absolute paths or timestamps
         """
         record = {
             "seq": self._seq,
@@ -74,13 +77,23 @@ class TraceWriter:
         }
         if detail:
             record["detail"] = detail
+
+        # Validate event before recording
+        path_errors = validate_no_absolute_paths(record)
+        if path_errors:
+            raise ValueError(f"Trace event contains absolute paths: {path_errors}")
+
+        timestamp_errors = validate_no_timestamps(record)
+        if timestamp_errors:
+            raise ValueError(f"Trace event contains timestamps: {timestamp_errors}")
+
         self._events.append(record)
         self._seq += 1
 
     def run_start(self, input_path: str, input_sha256: str) -> None:
         """Record run start event."""
         self._emit(EVENT_RUN_START, "INIT", {
-            "input_path_rel": self._make_rel_path(input_path),
+            "input_path_rel": self._make_rel_path(input_path, allow_external=True),
             "input_sha256": input_sha256
         })
 
@@ -122,17 +135,33 @@ class TraceWriter:
 
     def execution_skipped(self, reason: str) -> None:
         """Record execution skip event."""
-        self._emit(EVENT_EXECUTION_SKIPPED, "EXECUTION", {"reason": reason})
+        self._emit(EVENT_EXECUTION_SKIPPED, "EXECUTION", {
+            "executed": False,
+            "reason": reason
+        })
 
-    def execution_complete(self, run_directory: Optional[str], exit_code: int) -> None:
-        """Record execution completion event."""
-        detail: Dict[str, Any] = {"exit_code": exit_code}
-        if run_directory:
-            detail["run_directory_rel"] = self._make_rel_path(run_directory)
-            # Record stdout.raw.kv existence without reading content
-            stdout_path = os.path.join(run_directory, "stdout.raw.kv")
-            if os.path.isfile(stdout_path):
-                detail["stdout_raw_kv_sha256"] = sha256_file(stdout_path)
+    def execution_complete(
+        self,
+        stdout_raw_kv_path: Optional[str],
+        exit_code: int
+    ) -> None:
+        """
+        Record execution completion event.
+
+        Args:
+            stdout_raw_kv_path: Path to stdout.raw.kv file (if exists)
+            exit_code: Exit code from execution
+
+        Note: We do NOT record the run directory path as it may contain
+        timestamps. We only record the hash of stdout.raw.kv.
+        """
+        detail: Dict[str, Any] = {
+            "executed": True,
+            "exit_code": exit_code
+        }
+        # Record stdout.raw.kv hash without recording timestamped path
+        if stdout_raw_kv_path and os.path.isfile(stdout_raw_kv_path):
+            detail["stdout_raw_kv_sha256"] = sha256_file(stdout_raw_kv_path)
         self._emit(EVENT_EXECUTION_COMPLETE, "EXECUTION", detail)
 
     def run_complete(self, run_id: str) -> None:

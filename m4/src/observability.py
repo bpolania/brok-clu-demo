@@ -13,7 +13,7 @@ import os
 import sys
 from typing import Optional
 
-from utils import sha256_file, to_rel_path
+from utils import sha256_file, to_rel_path, PathSafetyError
 from manifest import ManifestBuilder
 from trace import TraceWriter
 
@@ -46,10 +46,17 @@ class PipelineObserver:
         Record run start.
 
         Args:
-            input_path: Path to input file
+            input_path: Path to input file (may be external to repo)
+
+        Note: This method does NOT copy or modify the input file.
+        For external inputs, it records "[external]:<basename>" as the path
+        but still hashes the actual file content.
         """
-        self.manifest.set_input(input_path)
+        # Always hash the actual input file (observation only)
         input_sha = sha256_file(input_path)
+
+        # Record input - manifest handles external paths with marker
+        self.manifest.set_input(input_path)
         self.trace.run_start(input_path, input_sha)
 
     def record_proposal(
@@ -106,8 +113,9 @@ class PipelineObserver:
         Record that execution was skipped.
 
         Args:
-            reason: Reason for skipping
+            reason: Reason for skipping (should be a stable token, not freeform)
         """
+        self.manifest.record_execution(executed=False)
         self.manifest.add_stage("EXECUTION", "SKIP")
         self.trace.execution_skipped(reason)
 
@@ -120,22 +128,30 @@ class PipelineObserver:
         Record execution completion.
 
         Args:
-            run_directory: Path to PoC v2 run directory
+            run_directory: Path to PoC v2 run directory (may contain timestamps)
             exit_code: Exit code from execution
+
+        Note: We do NOT record the run_directory path as it contains timestamps.
+        We only record the hash of stdout.raw.kv (authoritative output).
         """
+        self.manifest.record_execution(executed=True)
         status = "OK" if exit_code == 0 else "FAIL"
-        outputs = []
+        stdout_path = None
 
         if run_directory:
             stdout_path = os.path.join(run_directory, "stdout.raw.kv")
             if os.path.isfile(stdout_path):
-                # Record stdout.raw.kv as authoritative output
-                # We only hash, never read/interpret content
-                self.manifest.add_artifact(stdout_path, "stdout.raw.kv", authoritative=True)
-                outputs.append(stdout_path)
+                # Record stdout.raw.kv with hash only (omit timestamped path)
+                self.manifest.add_artifact(
+                    stdout_path,
+                    "stdout.raw.kv",
+                    authoritative=True,
+                    omit_path=True
+                )
 
-        self.manifest.add_stage("EXECUTION", status, outputs if outputs else None)
-        self.trace.execution_complete(run_directory, exit_code)
+        # Don't record outputs with timestamped paths
+        self.manifest.add_stage("EXECUTION", status, omit_outputs=True)
+        self.trace.execution_complete(stdout_path, exit_code)
 
     def finalize(self) -> str:
         """
