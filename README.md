@@ -18,6 +18,35 @@ This is **not** an SDK, framework, or extensible system. The runtime behavior ca
 
 ---
 
+## Reference Artifact: How to Read This Repo
+
+This repository is a **frozen reference artifact** tagged as `brok-demo-v1`. See [`REFERENCE_ARTIFACT.md`](REFERENCE_ARTIFACT.md) for the complete declaration.
+
+### Pipeline Flow
+
+```
+INPUT --> PROPOSAL --> ARTIFACT --> EXECUTION --> OBSERVABILITY
+  |          |            |            |              |
+  |     (M-1: LLM)   (M-2: decision) (M-3: gate)  (M-4: trace)
+  |          |            |            |              |
+  v          v            v            v              v
+input.txt  proposal_set  artifact   stdout.raw.kv  manifest.json
+              .json        .json                   trace.jsonl
+```
+
+### Authority Boundaries
+
+| Output | Authority |
+|--------|-----------|
+| `stdout.raw.kv` | **AUTHORITATIVE** - execution truth |
+| `artifact.json` | DERIVED - wrapper decision record |
+| `proposal_set.json` | NON-AUTHORITATIVE - may be wrong |
+| `manifest.json`, `trace.jsonl` | DERIVED - observability only |
+
+**Non-Goals:** This demo makes no claims about semantic correctness, NLP accuracy, or production readiness. See [`REFERENCE_ARTIFACT.md`](REFERENCE_ARTIFACT.md) for the full non-goals list.
+
+---
+
 ## Platform Requirements
 
 | Requirement | Value |
