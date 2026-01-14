@@ -3,5 +3,10 @@ artifacts/
 semantic/regression/runs/
 semantic/artifacts/
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
 # Local IDE/tool settings
 .claude/settings.local.json
