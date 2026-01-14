@@ -89,8 +89,10 @@ Location: `artifact/schema/artifact.schema.json`
 This will:
 1. Generate proposals under `artifacts/proposals/demo1/`
 2. Build artifact under `artifacts/artifacts/demo1/`
-3. If ACCEPT: invoke `scripts/run_poc_v2.sh`
-4. If REJECT: print decision and exit
+3. If ACCEPT: invoke `scripts/run_poc_v2.sh --input <file>` (exact form, no other parameters)
+4. If REJECT: print decision and exit (no PoC v2 invocation)
+
+**Note:** If the input file is outside the repository (e.g., `/tmp/in.txt`), it is copied to `artifacts/inputs/<run-id>/input.raw` and the artifact references this repo-relative path. This ensures artifacts contain no absolute paths.
 
 ---
 
@@ -99,6 +101,7 @@ This will:
 | Output | Path |
 |--------|------|
 | Proposals | `artifacts/proposals/<run-id>/proposal_set.json` |
+| Input copy (external) | `artifacts/inputs/<run-id>/input.raw` (only for inputs outside repo) |
 | Artifact | `artifacts/artifacts/<run-id>/artifact.json` |
 | Artifact hash | `artifacts/artifacts/<run-id>/artifact.json.sha256` |
 | Execution | `artifacts/run/run_<timestamp>/` (created by PoC v2) |
