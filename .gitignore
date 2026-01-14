@@ -3,5 +3,9 @@ artifacts/
 semantic/regression/runs/
 semantic/artifacts/
 
+# Python bytecode (Phase M-1 proposal generator)
+__pycache__/
+*.pyc
+
 # Local IDE/tool settings
 .claude/settings.local.json
