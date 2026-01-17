@@ -19,7 +19,6 @@ Usage:
 import os
 import sys
 import json
-import subprocess
 import hashlib
 import argparse
 from typing import Dict, Optional, Tuple, TYPE_CHECKING
@@ -137,37 +136,58 @@ def run_proposal_generator(
     repo_root: str
 ) -> Tuple[Optional[Dict], str, Optional[str]]:
     """
-    Run the proposal generator (M-1).
+    Run the proposal generator via acquire_proposal_set seam.
 
     Returns:
         Tuple of (proposal_set, proposal_set_path, error_message)
     """
     proposal_dir = os.path.join(repo_root, 'artifacts', 'proposals', run_id)
     os.makedirs(proposal_dir, exist_ok=True)
-
-    generator_script = os.path.join(repo_root, 'scripts', 'generate_proposals.sh')
+    proposal_set_path = os.path.join(proposal_dir, 'proposal_set.json')
 
     try:
-        result = subprocess.run(
-            [generator_script, '--input', input_file, '--run-id', run_id],
-            capture_output=True,
-            text=True,
-            cwd=repo_root
-        )
+        # Read input file as raw bytes
+        with open(input_file, 'rb') as f:
+            raw_input_bytes = f.read()
 
-        proposal_set_path = os.path.join(proposal_dir, 'proposal_set.json')
+        # Call the seam (single call, no retries)
+        # Import here to ensure path setup is complete
+        src_path = os.path.join(repo_root, 'src')
+        if src_path not in sys.path:
+            sys.path.insert(0, src_path)
+        from artifact_layer.seam_provider import acquire_proposal_set
 
-        if not os.path.isfile(proposal_set_path):
-            return None, proposal_set_path, "Proposal generation failed - no proposal_set.json"
+        proposal_bytes = acquire_proposal_set(raw_input_bytes)
 
-        proposal_set, load_error = load_proposal_set(proposal_set_path)
-        if load_error:
-            return None, proposal_set_path, f"Failed to load proposals: {load_error}"
+        # Empty bytes -> create empty proposal set for REJECT path
+        if not proposal_bytes:
+            proposal_set = {
+                "schema_version": "m1.0",
+                "input": {"raw": ""},
+                "proposals": []
+            }
+            proposal_json = json.dumps(proposal_set, sort_keys=True)
+        else:
+            proposal_json = proposal_bytes.decode('utf-8')
+            proposal_set = json.loads(proposal_json)
+
+        # Write proposal set to disk
+        with open(proposal_set_path, 'w', encoding='utf-8') as f:
+            f.write(proposal_json)
 
         return proposal_set, proposal_set_path, None
 
     except Exception as e:
-        return None, "", f"Proposal generation error: {type(e).__name__}: {e}"
+        # Any failure produces empty proposal set -> REJECT downstream
+        proposal_set = {
+            "schema_version": "m1.0",
+            "input": {"raw": ""},
+            "proposals": []
+        }
+        proposal_json = json.dumps(proposal_set, sort_keys=True)
+        with open(proposal_set_path, 'w', encoding='utf-8') as f:
+            f.write(proposal_json)
+        return proposal_set, proposal_set_path, None
 
 
 def build_and_save_artifact(

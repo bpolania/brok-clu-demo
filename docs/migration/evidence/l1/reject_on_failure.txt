@@ -1,0 +1,28 @@
+===========================================================================
+Phase L-1 REJECT-on-Failure Tests
+===========================================================================
+
+These tests assert DOWNSTREAM artifact decision = REJECT,
+not only seam-level behavior.
+
+[PASS] Unmapped input -> REJECT
+       Downstream REJECT with NO_PROPOSALS
+[PASS] Empty input -> REJECT
+       Downstream REJECT with NO_PROPOSALS
+[PASS] Malformed UTF-8 -> REJECT
+       Downstream REJECT with NO_PROPOSALS
+[PASS] Engine None -> downstream REJECT
+       Downstream artifact: decision=REJECT, reason_code=NO_PROPOSALS
+[PASS] Engine raises -> downstream REJECT
+       Downstream artifact: decision=REJECT, reason_code=NO_PROPOSALS
+[PASS] Engine non-bytes -> downstream REJECT
+       Downstream artifact: decision=REJECT, reason_code=NO_PROPOSALS
+[PASS] Seam: engine None -> b''
+       Seam returns b'' when engine is None
+[PASS] Seam: engine raises -> b''
+       Seam returns b'' when engine raises
+[PASS] Seam: engine non-bytes -> b''
+       Seam returns b'' when engine returns non-bytes
+
+===========================================================================
+All REJECT-on-failure tests PASSED

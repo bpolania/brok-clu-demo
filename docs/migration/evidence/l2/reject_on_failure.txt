@@ -1,0 +1,22 @@
+===========================================================================
+Phase L-2 Failure Collapse Tests
+===========================================================================
+
+These tests verify that failures collapse to REJECT
+through the real pipeline, with exit code 0 and no execution.
+
+Note: Offline engine requires no API keys or external services.
+
+[PASS] Empty input -> REJECT
+       Empty input -> REJECT (exit 0)
+[PASS] Malformed UTF-8 -> REJECT
+       Malformed UTF-8 -> REJECT (exit 0)
+[PASS] Unmapped input -> REJECT
+       Unmapped input -> REJECT (exit 0)
+[PASS] Seam exception -> REJECT
+       Seam exception -> downstream REJECT (NO_PROPOSALS)
+[PASS] Seam returns b'' -> REJECT
+       Seam returns b'' -> downstream REJECT
+
+===========================================================================
+All failure collapse tests PASSED

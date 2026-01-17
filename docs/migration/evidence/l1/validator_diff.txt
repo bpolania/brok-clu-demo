@@ -1,0 +1,5 @@
+# Validator Diff vs Baseline (brok-demo-v1)
+
+Command: git diff brok-demo-v1 -- artifact/src/validator.py proposal/src/validator.py
+
+Result: (empty - no changes)

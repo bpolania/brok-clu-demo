@@ -1,0 +1,87 @@
+===========================================================================
+Phase L-2 Proposal Variability Tests (Offline)
+===========================================================================
+
+These tests verify nondeterminism WITHOUT external services or API keys.
+
+---------------------------------------------------------------------------
+Test 1: Direct Engine Variability
+---------------------------------------------------------------------------
+Direct Engine Variability Test
+============================================================
+Runs: 20
+Unique hashes: 20
+Variability demonstrated: True
+
+Sample outputs:
+  Run 1: hash=67294d618019a314, bytes=213
+  Run 2: hash=edc24c93449b8f9c, bytes=213
+  Run 3: hash=fc6e4484a892cdd2, bytes=213
+  Run 4: hash=00f100447fdc4cbe, bytes=213
+  Run 5: hash=865c4c3a073dcf3c, bytes=213
+
+---------------------------------------------------------------------------
+Test 2: Pipeline Variability (via CLI)
+---------------------------------------------------------------------------
+Offline Nondeterministic Engine - Variability Test
+============================================================
+Input: restart alpha subsystem gracefully
+Runs: 20
+
+Run 1: hash=0a1f15ae1b6616d9, proposals=1, decision=REJECT
+Run 2: hash=2f2c2bdbc6b924bb, proposals=1, decision=REJECT
+Run 3: hash=1081fcd5c73e4e20, proposals=1, decision=REJECT
+Run 4: hash=40b401996bc11f96, proposals=1, decision=REJECT
+Run 5: hash=2ea87a3a4e27e20a, proposals=1, decision=REJECT
+Run 6: hash=2e6abc97f743e98d, proposals=1, decision=REJECT
+Run 7: hash=54f54f2392a429f7, proposals=1, decision=REJECT
+Run 8: hash=e025d513dbc28087, proposals=1, decision=REJECT
+Run 9: hash=c2211d30c7600ca5, proposals=1, decision=REJECT
+Run 10: hash=b1228deee4b6efb2, proposals=1, decision=REJECT
+Run 11: hash=91d7ff2134190993, proposals=1, decision=REJECT
+Run 12: hash=2da1a4c36ed2eba2, proposals=1, decision=REJECT
+Run 13: hash=b32cd63fe9c67544, proposals=1, decision=REJECT
+Run 14: hash=16e2f1c9fb18a3a3, proposals=1, decision=REJECT
+Run 15: hash=b6f2802cd4ccfba6, proposals=1, decision=REJECT
+Run 16: hash=8e984909b907b616, proposals=1, decision=REJECT
+Run 17: hash=95949e9ac9837677, proposals=1, decision=REJECT
+Run 18: hash=3901bca8f426c908, proposals=1, decision=REJECT
+Run 19: hash=e85a4948bb5c0765, proposals=1, decision=REJECT
+Run 20: hash=85fb8a6b9e3973f1, proposals=1, decision=REJECT
+
+VARIABILITY ANALYSIS:
+  Unique proposal hashes: 20
+  Result: VARIABILITY DEMONSTRATED
+  (Different runs produced different proposals - expected nondeterminism)
+
+REJECT-ONLY VERIFICATION (L-2 CRITICAL):
+  All runs REJECT: True
+  Zero ACCEPT: True
+  Result: REJECT-ONLY VERIFIED
+
+DOWNSTREAM DETERMINISM:
+  All exit codes = 0: True
+  Result: DOWNSTREAM DETERMINISM MAINTAINED
+
+OFFLINE OPERATION:
+  External services required: None
+  API keys required: None
+  Network access required: None
+  Result: OFFLINE OPERATION CONFIRMED
+
+---------------------------------------------------------------------------
+Test 3: Empty Input Always Rejects
+---------------------------------------------------------------------------
+[PASS] Empty input -> REJECT (exit 0) confirmed
+
+===========================================================================
+SUMMARY
+===========================================================================
+Direct engine variability: PASS
+Pipeline variability: PASS
+REJECT-only (L-2 critical): PASS
+Downstream determinism: PASS
+Empty input -> REJECT: PASS
+
+Offline operation: CONFIRMED (no secrets, no network)
+===========================================================================
