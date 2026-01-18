@@ -1,0 +1,39 @@
+=== L-4 State Transition REJECT Run Evidence ===
+Date: 2026-01-17
+Command: python3 brok --input inputs/l4/illegal_payment_succeeded.txt
+
+Input: inputs/l4/illegal_payment_succeeded.txt
+Content: "payment succeeded\n"
+
+L-4 State Machine Parameters:
+  - Initial State: CREATED
+  - Order ID: demo-order-1
+  - Event Token: payment_succeeded
+  - Expected Result: REJECT (payment_succeeded not legal from CREATED)
+
+Result: REJECT
+
+Reason Code: ILLEGAL_TRANSITION
+
+================================================================================
+
+Artifact Decision: REJECT
+Reject Payload:
+  - reason_code: ILLEGAL_TRANSITION
+  - notes: ["L4_REJECT:ILLEGAL_TRANSITION"]
+
+Execution: NOT INVOKED (as expected for REJECT)
+
+================================================================================
+
+This demonstrates:
+1. Event token payment_succeeded is recognized (not INVALID_EVENT_TOKEN)
+2. But transition is not legal from CREATED (must be from PAYMENT_PENDING)
+3. Artifact layer correctly REJECTS with ILLEGAL_TRANSITION
+4. No execution occurs (no stdout.raw.kv produced)
+
+Legal transitions from CREATED:
+  - create_payment -> PAYMENT_PENDING
+  - cancel_order -> CANCELLED
+
+payment_succeeded requires current_state == PAYMENT_PENDING

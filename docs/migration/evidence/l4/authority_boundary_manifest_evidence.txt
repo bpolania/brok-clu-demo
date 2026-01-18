@@ -1,0 +1,225 @@
+=== L-4 Authority Boundary Manifest Evidence ===
+Generated: 2026-01-17
+
+================================================================================
+A) RUN DIRECTORIES IDENTIFIED
+================================================================================
+
+ACCEPT Run:
+  L4 Execution Directory: artifacts/run/l4_run_run_071c64b5f425/
+  M4 Manifest Directory:  artifacts/run/m4_b16943a8ca0f29f1/
+
+REJECT Run:
+  L4 Execution Directory: (none - execution skipped)
+  M4 Manifest Directory:  artifacts/run/m4_1819203d3ab11b57/
+
+================================================================================
+B) MANIFEST FILE LOCATIONS AND HEADERS
+================================================================================
+
+ACCEPT Run Manifest:
+  Path: artifacts/run/m4_b16943a8ca0f29f1/manifest.json
+
+REJECT Run Manifest:
+  Path: artifacts/run/m4_1819203d3ab11b57/manifest.json
+
+Both manifests use schema_version: "m4.0"
+
+================================================================================
+C) AUTHORITATIVE OUTPUT EVIDENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+ACCEPT RUN MANIFEST (complete, formatted with python3 -m json.tool)
+--------------------------------------------------------------------------------
+
+{
+  "artifacts": [
+    {
+      "path": "artifacts/artifacts/run_071c64b5f425/artifact.json",
+      "sha256": "6874702ff1499560e18a8c791e6b21180b7f0bb0b0de808cbce4915aa7877c91",
+      "type": "artifact"
+    },
+    {
+      "path": "artifacts/proposals/run_071c64b5f425/proposal_set.json",
+      "sha256": "2d2a8a355af8ef81418d83dd5de15758b6c92d56fee65df5818e817a40b78e3c",
+      "type": "proposal_set"
+    },
+    {
+      "sha256": "382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288",
+      "type": "stdout.raw.kv"
+    }
+  ],
+  "authority_boundary": {
+    "authoritative_outputs": [
+      "stdout.raw.kv"
+    ],
+    "derived_outputs": [
+      "artifacts/artifacts/run_071c64b5f425/artifact.json",
+      "artifacts/proposals/run_071c64b5f425/proposal_set.json"
+    ]
+  },
+  "determinism": {
+    "no_absolute_paths": true,
+    "no_timestamps": true
+  },
+  "execution": {
+    "executed": true
+  },
+  "inputs": {
+    "input_path_rel": "inputs/l4/create_payment.txt",
+    "input_sha256": "8e67d109840353a521ed67bcad67deac5923ae6582873249886b710a8692b483"
+  },
+  "run_id": "m4_b16943a8ca0f29f1",
+  "schema_version": "m4.0",
+  "stages": [
+    {
+      "name": "PROPOSAL",
+      "outputs": [
+        "artifacts/proposals/run_071c64b5f425/proposal_set.json"
+      ],
+      "status": "OK"
+    },
+    {
+      "name": "ARTIFACT",
+      "outputs": [
+        "artifacts/artifacts/run_071c64b5f425/artifact.json"
+      ],
+      "status": "OK"
+    },
+    {
+      "name": "EXECUTION",
+      "status": "OK"
+    }
+  ]
+}
+
+ACCEPT Run - Authority Boundary Section:
+  "authority_boundary": {
+    "authoritative_outputs": [
+      "stdout.raw.kv"            <-- stdout.raw.kv IS INCLUDED
+    ],
+    "derived_outputs": [
+      "artifacts/artifacts/run_071c64b5f425/artifact.json",
+      "artifacts/proposals/run_071c64b5f425/proposal_set.json"
+    ]
+  }
+
+ACCEPT Run - Execution Section:
+  "execution": {
+    "executed": true              <-- Execution DID occur
+  }
+
+--------------------------------------------------------------------------------
+REJECT RUN MANIFEST (complete, formatted with python3 -m json.tool)
+--------------------------------------------------------------------------------
+
+{
+  "artifacts": [
+    {
+      "path": "artifacts/artifacts/run_2f84f1707774/artifact.json",
+      "sha256": "4f822f0f7caa6f034e0e1bdfde319898a9802c35a01f564ed73d607bce945491",
+      "type": "artifact"
+    },
+    {
+      "path": "artifacts/proposals/run_2f84f1707774/proposal_set.json",
+      "sha256": "ef8f905160d29f4937f6952b1df0467841f6523f1536046ef61d82bb632f194d",
+      "type": "proposal_set"
+    }
+  ],
+  "authority_boundary": {
+    "authoritative_outputs": [],
+    "derived_outputs": [
+      "artifacts/artifacts/run_2f84f1707774/artifact.json",
+      "artifacts/proposals/run_2f84f1707774/proposal_set.json"
+    ]
+  },
+  "determinism": {
+    "no_absolute_paths": true,
+    "no_timestamps": true
+  },
+  "execution": {
+    "executed": false
+  },
+  "inputs": {
+    "input_path_rel": "inputs/l4/illegal_payment_succeeded.txt",
+    "input_sha256": "5632ffb2dadadd62093cae36422cc6a3d4e9439ce7afa7d7f5fe34ff946ade58"
+  },
+  "run_id": "m4_1819203d3ab11b57",
+  "schema_version": "m4.0",
+  "stages": [
+    {
+      "name": "PROPOSAL",
+      "outputs": [
+        "artifacts/proposals/run_2f84f1707774/proposal_set.json"
+      ],
+      "status": "OK"
+    },
+    {
+      "name": "ARTIFACT",
+      "outputs": [
+        "artifacts/artifacts/run_2f84f1707774/artifact.json"
+      ],
+      "status": "OK"
+    },
+    {
+      "name": "EXECUTION",
+      "status": "SKIP"
+    }
+  ]
+}
+
+REJECT Run - Authority Boundary Section:
+  "authority_boundary": {
+    "authoritative_outputs": [],   <-- EMPTY - NO authoritative outputs
+    "derived_outputs": [
+      "artifacts/artifacts/run_2f84f1707774/artifact.json",
+      "artifacts/proposals/run_2f84f1707774/proposal_set.json"
+    ]
+  }
+
+REJECT Run - Execution Section:
+  "execution": {
+    "executed": false             <-- Execution DID NOT occur
+  }
+
+================================================================================
+D) HASH EVIDENCE TIE-IN
+================================================================================
+
+ACCEPT Run - stdout.raw.kv Hash Entry:
+  In the "artifacts" array:
+  {
+    "sha256": "382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288",
+    "type": "stdout.raw.kv"
+  }
+
+  This hash corresponds to the authoritative execution output.
+  The hash is recorded WITHOUT a path (omit_path=True) because the L4 execution
+  directory contains timestamps and run IDs that vary.
+
+REJECT Run - stdout.raw.kv Hash Entry:
+  ABSENT - No stdout.raw.kv entry exists in the "artifacts" array.
+  The artifacts array contains only:
+  - artifact.json (type: artifact)
+  - proposal_set.json (type: proposal_set)
+
+================================================================================
+E) SUMMARY OF AUTHORITY BOUNDARY PROOF
+================================================================================
+
+| Run Type | Decision | executed | authoritative_outputs | stdout.raw.kv hash |
+|----------|----------|----------|----------------------|-------------------|
+| ACCEPT   | ACCEPT   | true     | ["stdout.raw.kv"]    | 382dc31811e5097... |
+| REJECT   | REJECT   | false    | []                   | (absent)          |
+
+This proves:
+1. ACCEPT runs produce stdout.raw.kv as authoritative output
+2. REJECT runs do NOT produce stdout.raw.kv
+3. REJECT runs have EMPTY authoritative_outputs list
+4. The manifest correctly records execution status (true/false)
+5. Hash evidence ties authoritative output to specific content
+
+================================================================================
+END OF AUTHORITY BOUNDARY MANIFEST EVIDENCE
+================================================================================

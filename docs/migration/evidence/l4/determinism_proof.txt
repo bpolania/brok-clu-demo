@@ -1,0 +1,38 @@
+=== L-4 Determinism Proof ===
+Date: 2026-01-17
+
+Test: Repeated identical runs produce byte-identical stdout.raw.kv
+
+Input: inputs/l4/create_payment.txt
+Content: "create payment\n"
+
+Procedure:
+1. Run: python3 brok --input inputs/l4/create_payment.txt
+2. Compute SHA-256 of artifacts/run/l4_run_run_071c64b5f425/stdout.raw.kv
+3. Delete run artifacts
+4. Run: python3 brok --input inputs/l4/create_payment.txt
+5. Compute SHA-256 of artifacts/run/l4_run_run_071c64b5f425/stdout.raw.kv
+6. Compare hashes
+
+Results:
+  Run 1 hash: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+  Run 2 hash: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+Verdict: DETERMINISM PASS
+
+================================================================================
+
+stdout.raw.kv content (identical in both runs):
+  order_id=demo-order-1
+  previous_state=CREATED
+  event=create_payment
+  current_state=PAYMENT_PENDING
+  terminal=false
+
+================================================================================
+
+This proves:
+1. Same input produces identical output (byte-for-byte)
+2. No randomness in state machine evaluation
+3. No timestamps or variable data in stdout.raw.kv
+4. Canonical serialization produces stable output

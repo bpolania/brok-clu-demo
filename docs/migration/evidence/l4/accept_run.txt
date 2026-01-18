@@ -1,0 +1,40 @@
+=== L-4 State Transition ACCEPT Run Evidence ===
+Date: 2026-01-17
+Command: python3 brok --input inputs/l4/create_payment.txt
+
+Input: inputs/l4/create_payment.txt
+Content: "create payment\n"
+
+L-4 State Machine Parameters:
+  - Initial State: CREATED
+  - Order ID: demo-order-1
+  - Event Token: create_payment
+  - Expected Transition: CREATED -> PAYMENT_PENDING
+
+Result: ACCEPT
+
+Authoritative Output (stdout.raw.kv):
+  order_id=demo-order-1
+  previous_state=CREATED
+  event=create_payment
+  current_state=PAYMENT_PENDING
+  terminal=false
+
+================================================================================
+
+Artifact Decision: ACCEPT
+Accept Payload Kind: STATE_TRANSITION
+Transition:
+  - order_id: demo-order-1
+  - previous_state: CREATED
+  - event: create_payment
+  - current_state: PAYMENT_PENDING
+  - terminal: false
+
+================================================================================
+
+This demonstrates:
+1. Legal transition from CREATED via create_payment
+2. Deterministic state machine evaluation
+3. Structured authoritative output via stdout.raw.kv
+4. Non-terminal state (terminal=false)

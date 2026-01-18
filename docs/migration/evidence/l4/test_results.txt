@@ -1,0 +1,147 @@
+===============================================================================
+Phase L-4 State Machine Tests
+===============================================================================
+
+--- Section 1: State Machine Determinism ---
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] apply_transition determinism
+[PASS] All 12 states defined
+[PASS] All 14 event tokens defined
+[PASS] Initial state is CREATED
+[PASS] Terminal states are DELIVERED and CANCELLED
+[PASS] Demo order ID is demo-order-1
+
+--- Section 2: Transition Legality ---
+[PASS] create_payment from CREATED -> PAYMENT_PENDING
+[PASS] payment_succeeded from PAYMENT_PENDING -> PAID
+[PASS] payment_failed from PAYMENT_PENDING -> PAYMENT_FAILED
+[PASS] retry_payment from PAYMENT_FAILED -> PAYMENT_PENDING
+[PASS] flag_fraud from PAID -> FRAUD_REVIEW
+[PASS] approve_fraud from FRAUD_REVIEW -> INVENTORY_RESERVED
+[PASS] reject_fraud from FRAUD_REVIEW -> CANCELLED
+[PASS] reserve_inventory from PAID -> INVENTORY_RESERVED
+[PASS] start_picking from INVENTORY_RESERVED -> PICKING
+[PASS] pack_order from PICKING -> PACKED
+[PASS] ship_order from PACKED -> SHIPPED
+[PASS] mark_in_transit from SHIPPED -> IN_TRANSIT
+[PASS] confirm_delivery from IN_TRANSIT -> DELIVERED
+[PASS] payment_succeeded from CREATED -> ILLEGAL_TRANSITION
+[PASS] mark_in_transit from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] confirm_delivery from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] cancel_order from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] flag_fraud from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] reserve_inventory from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] retry_payment from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] create_payment from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] start_picking from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] approve_fraud from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] ship_order from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] payment_failed from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] reject_fraud from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] pack_order from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] payment_succeeded from DELIVERED -> ILLEGAL_TRANSITION
+[PASS] mark_in_transit from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] confirm_delivery from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] cancel_order from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] flag_fraud from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] reserve_inventory from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] retry_payment from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] create_payment from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] start_picking from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] approve_fraud from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] ship_order from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] payment_failed from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] reject_fraud from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] pack_order from CANCELLED -> ILLEGAL_TRANSITION
+[PASS] payment_succeeded from CANCELLED -> ILLEGAL_TRANSITION
+
+--- Section 3: Cancellation Edges ---
+[PASS] cancel_order from CREATED -> CANCELLED
+[PASS] cancel_order from PAYMENT_PENDING -> CANCELLED
+[PASS] cancel_order from PAID -> CANCELLED
+[PASS] cancel_order from INVENTORY_RESERVED -> CANCELLED
+[PASS] cancel_order from PICKING -> ILLEGAL_TRANSITION
+[PASS] cancel_order from PACKED -> ILLEGAL_TRANSITION
+[PASS] cancel_order from SHIPPED -> ILLEGAL_TRANSITION
+[PASS] cancel_order from IN_TRANSIT -> ILLEGAL_TRANSITION
+[PASS] cancel_order from PAYMENT_FAILED -> ILLEGAL_TRANSITION
+[PASS] cancel_order from FRAUD_REVIEW -> ILLEGAL_TRANSITION
+
+--- Section 4: Proposal Mapper ---
+[PASS] 'create payment' -> CREATE_PAYMENT
+[PASS] 'CREATE PAYMENT' -> CREATE_PAYMENT (case insensitive)
+[PASS] '  create  payment  ' -> CREATE_PAYMENT (whitespace tolerant)
+[PASS] 'create payment' -> create_payment
+[PASS] 'payment succeeded' -> payment_succeeded
+[PASS] 'payment failed' -> payment_failed
+[PASS] 'retry payment' -> retry_payment
+[PASS] 'flag fraud' -> flag_fraud
+[PASS] 'approve fraud' -> approve_fraud
+[PASS] 'reject fraud' -> reject_fraud
+[PASS] 'reserve inventory' -> reserve_inventory
+[PASS] 'start picking' -> start_picking
+[PASS] 'pack order' -> pack_order
+[PASS] 'ship order' -> ship_order
+[PASS] 'mark in transit' -> mark_in_transit
+[PASS] 'confirm delivery' -> confirm_delivery
+[PASS] 'cancel order' -> cancel_order
+[PASS] 'do something random' -> None
+[PASS] is_l4_input('create payment')
+[PASS] is_l4_input('random text') is False
+[PASS] create_l4_proposal kind is STATE_TRANSITION_REQUEST
+[PASS] create_l4_proposal payload.event_token is create_payment
+
+--- Section 5: Artifact Builder L-4 ---
+[PASS] Legal L-4 transition -> ACCEPT
+[PASS] L-4 ACCEPT has STATE_TRANSITION kind
+[PASS] Illegal L-4 transition -> REJECT
+[PASS] L-4 REJECT reason is ILLEGAL_TRANSITION
+[PASS] Invalid event token -> REJECT
+[PASS] L-4 REJECT reason is INVALID_EVENT_TOKEN
+[PASS] L-4 ACCEPT artifact validates
+[PASS] transition.order_id == 'demo-order-1'
+[PASS] transition.previous_state == 'CREATED'
+[PASS] transition.event == 'create_payment'
+[PASS] transition.current_state == 'PAYMENT_PENDING'
+[PASS] transition.terminal == False
+[PASS] cancel_order -> current_state == 'CANCELLED'
+[PASS] cancel_order -> terminal == True
+
+--- Section 6: Output Schema ---
+[PASS] transition has 'order_id' field
+[PASS] transition has 'previous_state' field
+[PASS] transition has 'event' field
+[PASS] transition has 'current_state' field
+[PASS] transition has 'terminal' field
+
+--- Section 7: Allowed Transitions Set ---
+[PASS] ALLOWED_TRANSITIONS has 17 edges
+[PASS] CREATED -> PAYMENT_PENDING in ALLOWED_TRANSITIONS
+[PASS] PAYMENT_PENDING -> PAID in ALLOWED_TRANSITIONS
+[PASS] PAYMENT_PENDING -> PAYMENT_FAILED in ALLOWED_TRANSITIONS
+[PASS] PAYMENT_FAILED -> PAYMENT_PENDING in ALLOWED_TRANSITIONS
+[PASS] PAID -> FRAUD_REVIEW in ALLOWED_TRANSITIONS
+[PASS] FRAUD_REVIEW -> INVENTORY_RESERVED in ALLOWED_TRANSITIONS
+[PASS] FRAUD_REVIEW -> CANCELLED in ALLOWED_TRANSITIONS
+[PASS] PAID -> INVENTORY_RESERVED in ALLOWED_TRANSITIONS
+[PASS] INVENTORY_RESERVED -> PICKING in ALLOWED_TRANSITIONS
+[PASS] PICKING -> PACKED in ALLOWED_TRANSITIONS
+[PASS] PACKED -> SHIPPED in ALLOWED_TRANSITIONS
+[PASS] SHIPPED -> IN_TRANSIT in ALLOWED_TRANSITIONS
+[PASS] IN_TRANSIT -> DELIVERED in ALLOWED_TRANSITIONS
+[PASS] CREATED -> CANCELLED in ALLOWED_TRANSITIONS
+[PASS] PAID -> CANCELLED in ALLOWED_TRANSITIONS
+[PASS] PAYMENT_PENDING -> CANCELLED in ALLOWED_TRANSITIONS
+[PASS] INVENTORY_RESERVED -> CANCELLED in ALLOWED_TRANSITIONS
+
+===============================================================================
+Tests: 126/126 passed
+All L-4 state machine tests PASSED

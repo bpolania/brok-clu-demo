@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-Phase M-3: Execution Gateway
+Phase M-3: Execution Gateway (with L-4 State Transition Support)
 
-This module is the ONLY allowed gateway to PoC v2 execution.
+This module is the ONLY allowed gateway to execution.
 It enforces the structural invariant: no execution without a validated ACCEPT artifact.
 
 Authority model:
 - Artifact layer (M-2) owns wrapper-level decision authority
-- Execution layer (PoC v2) is frozen and produces stdout.raw.kv as authoritative output
+- Execution layer produces stdout.raw.kv as authoritative output
 - This gateway enforces the boundary: execution cannot proceed without ACCEPT
+
+Execution paths:
+- ROUTE artifacts: invoke PoC v2 (frozen, deterministic)
+- STATE_TRANSITION artifacts (L-4): produce state transition output directly
 
 Usage:
     from m3.src.gateway import ExecutionGateway, ExecutionResult
@@ -25,8 +29,10 @@ Guarantees:
 - REJECT artifacts never trigger execution
 - Invalid artifacts never trigger execution
 - All boundary violations produce non-zero exit with clear error message
+- stdout.raw.kv is the sole authoritative output for both execution paths
 """
 
+import hashlib
 import os
 import sys
 import json
@@ -124,13 +130,15 @@ class ExecutionGateway:
         input_file_path: str
     ) -> ExecutionResult:
         """
-        Execute PoC v2 if and only if the artifact decision is ACCEPT.
+        Execute based on artifact decision and kind.
 
-        This is the ONLY method that should invoke PoC v2.
+        Execution paths:
+        - ROUTE artifacts: invoke PoC v2 (frozen, deterministic)
+        - STATE_TRANSITION artifacts (L-4): produce state transition output
 
         Args:
             artifact: The artifact dict (must be validated ACCEPT)
-            input_file_path: Path to the input file for PoC v2
+            input_file_path: Path to the input file
 
         Returns:
             ExecutionResult with execution details
@@ -156,7 +164,15 @@ class ExecutionGateway:
                 error="Artifact decision is REJECT - execution not permitted"
             )
 
-        # decision == "ACCEPT" - proceed with execution
+        # decision == "ACCEPT" - determine execution path based on accept_payload.kind
+        accept_payload = artifact.get("accept_payload", {})
+        payload_kind = accept_payload.get("kind")
+
+        # L-4 STATE_TRANSITION path
+        if payload_kind == "STATE_TRANSITION":
+            return self._execute_state_transition(artifact)
+
+        # L-3 ROUTE path (PoC v2)
         if not os.path.isfile(input_file_path):
             return ExecutionResult(
                 executed=False,
@@ -198,6 +214,87 @@ class ExecutionGateway:
                 if len(parts) == 2:
                     return parts[1].strip()
         return None
+
+    def _execute_state_transition(self, artifact: Dict) -> ExecutionResult:
+        """
+        Execute L-4 STATE_TRANSITION artifact.
+
+        Produces stdout.raw.kv with the state transition record.
+        The output is deterministic: same artifact produces byte-identical output.
+
+        Args:
+            artifact: The STATE_TRANSITION artifact
+
+        Returns:
+            ExecutionResult with execution details
+        """
+        try:
+            # Extract transition from artifact
+            accept_payload = artifact.get("accept_payload", {})
+            transition = accept_payload.get("transition", {})
+
+            # Generate deterministic run ID from artifact
+            run_id = artifact.get("run_id", "unknown")
+            run_dir_name = f"l4_run_{run_id}"
+
+            # Create run directory
+            run_directory = os.path.join(self.repo_root, "artifacts", "run", run_dir_name)
+            os.makedirs(run_directory, exist_ok=True)
+
+            # Build stdout.raw.kv content (deterministic, canonical ordering)
+            # Fields in exact order: order_id, previous_state, event, current_state, terminal
+            kv_lines = [
+                f"order_id={transition.get('order_id', '')}",
+                f"previous_state={transition.get('previous_state', '')}",
+                f"event={transition.get('event', '')}",
+                f"current_state={transition.get('current_state', '')}",
+                f"terminal={str(transition.get('terminal', False)).lower()}",
+            ]
+            kv_content = "\n".join(kv_lines) + "\n"
+
+            # Write stdout.raw.kv (authoritative output)
+            stdout_path = os.path.join(run_directory, "stdout.raw.kv")
+            with open(stdout_path, "w", encoding="utf-8") as f:
+                f.write(kv_content)
+
+            # Write exit_code.txt
+            exit_code_path = os.path.join(run_directory, "exit_code.txt")
+            with open(exit_code_path, "w", encoding="utf-8") as f:
+                f.write("0\n")
+
+            # Write stderr.raw.txt (empty for successful execution)
+            stderr_path = os.path.join(run_directory, "stderr.raw.txt")
+            with open(stderr_path, "w", encoding="utf-8") as f:
+                f.write("")
+
+            # Write execution.meta.json (non-authoritative metadata)
+            meta = {
+                "run_dir": run_directory,
+                "verification_passed": True,
+                "execution_attempted": True,
+                "exit_code": 0,
+                "stdout_path": "stdout.raw.kv",
+                "stderr_path": "stderr.raw.txt",
+                "execution_kind": "STATE_TRANSITION",
+                "notes": "L-4 state transition execution"
+            }
+            meta_path = os.path.join(run_directory, "execution.meta.json")
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(meta, sort_keys=True, indent=2, fp=f)
+
+            return ExecutionResult(
+                executed=True,
+                decision="ACCEPT",
+                run_directory=run_directory,
+                exit_code=0
+            )
+
+        except Exception as e:
+            return ExecutionResult(
+                executed=False,
+                decision="ACCEPT",
+                error=f"L-4 execution failed: {type(e).__name__}: {e}"
+            )
 
     @staticmethod
     def require_accept_artifact(artifact: Dict) -> None:

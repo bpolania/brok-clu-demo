@@ -14,17 +14,18 @@ This engine produces the L-3 demo envelope proposal when input matches the
 canonical demo trigger. For all other inputs, it produces unmapped proposals
 that fail validation.
 
+Phase L-4 Extension - Stateful Workflow Demonstration:
+This engine recognizes L-4 event tokens and produces STATE_TRANSITION_REQUEST
+proposals. The artifact layer validates these against the frozen state machine.
+
 IMPORTANT: This engine is NON-AUTHORITATIVE.
 
-The AUTHORITATIVE L-3 acceptance gate is in artifact/src/builder.py:
-- The L-3 envelope gate checks if the single proposal matches EXACTLY:
-  - kind == "ROUTE_CANDIDATE"
-  - payload.intent == "STATUS_QUERY"
-  - payload.slots == {"target": "alpha"} (no mode, no extra keys)
-- Schema-valid alternatives (e.g., STATUS_QUERY on beta) are REJECTED by the
-  authoritative gate, NOT by this engine.
-- Even if this engine emitted a schema-valid alternative proposal, the
-  authoritative gate would REJECT it.
+The AUTHORITATIVE gates are in artifact/src/builder.py:
+- L-3 envelope gate: checks exact proposal structure for L-3 demo
+- L-4 state machine gate: validates transitions against frozen state machine
+
+This engine does NOT validate transition legality. It only maps inputs to
+event tokens. The artifact layer is sole authority for ACCEPT/REJECT.
 
 CRITICAL CONSTRAINTS:
 - No runtime configuration (no env vars, no flags, no config files)
@@ -43,8 +44,16 @@ Nondeterminism source: OS randomness via secrets module (cryptographically secur
 """
 
 import json
+import os
 import re
 import secrets
+import sys
+
+# Add src to path for L-4 imports
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_SRC_DIR = os.path.dirname(_SCRIPT_DIR)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
 
 # Schema version must match proposal layer
 SCHEMA_VERSION = "m1.0"
@@ -194,6 +203,23 @@ def llm_engine(raw_input_bytes: bytes) -> bytes:
         # Empty input: return empty proposal set -> REJECT (NO_PROPOSALS)
         if not input_text or input_text.isspace():
             return _make_proposal_set_bytes(input_text, [])
+
+        # Phase L-4: Check for L-4 event trigger first
+        # L-4 inputs are mapped to STATE_TRANSITION_REQUEST proposals
+        try:
+            from l4_state_machine.proposal_mapper import (
+                is_l4_input,
+                map_input_to_event_token,
+                create_l4_proposal
+            )
+            if is_l4_input(input_text):
+                event_token = map_input_to_event_token(input_text)
+                if event_token is not None:
+                    proposal = create_l4_proposal(event_token)
+                    return _make_proposal_set_bytes(input_text, [proposal])
+        except ImportError:
+            # L-4 module not available - fall through to L-3/unmapped
+            pass
 
         # Phase L-3: Demo trigger check (PROPOSAL GENERATOR CONVENIENCE)
         # This controls which proposal the engine emits, not the decision
