@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""
+Brok-CLU Wrapper - Derived UX Convenience Layer (Phase L-5)
+
+This is an OPTIONAL wrapper around the canonical ./brok CLI.
+It provides a convenience interface for interactive use.
+
+IMPORTANT - Authority Model:
+  - This wrapper is DERIVED and NON-AUTHORITATIVE
+  - The canonical command remains: ./brok --input <file>
+  - stdout.raw.kv is the ONLY authoritative execution output
+  - The JSON summary printed by this wrapper is DERIVED
+
+Usage:
+    ./brok-run "create payment"
+
+Output contract (exactly two lines on success):
+  Line 1: JSON with frozen schema (all fields always present)
+  Line 2: "Authoritative output: <path>" or "Authoritative output: NONE"
+
+Run identification method:
+  Filesystem delta within artifacts/run/ (black-box, no internal coupling)
+  - Snapshot directories before ./brok invocation
+  - Snapshot directories after ./brok invocation
+  - New directory = delta (must be exactly 1)
+"""
+
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+# Resolve repo root from this script's location
+_SCRIPT_PATH = os.path.abspath(__file__)
+_REPO_ROOT = os.path.dirname(_SCRIPT_PATH)
+_BROK_PATH = os.path.join(_REPO_ROOT, "brok")
+
+# Canonical run root (constant, matching established repo structure)
+_RUN_ROOT = os.path.join(_REPO_ROOT, "artifacts", "run")
+
+# Exit codes
+_EXIT_WRONG_ARGS = 2
+_EXIT_WRAPPER_FAILURE = 3
+
+
+def _sha256_file(path: str) -> str:
+    """Compute SHA-256 hex digest of a file."""
+    hasher = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _snapshot_run_dirs() -> set:
+    """Snapshot immediate child directories of run root."""
+    if not os.path.isdir(_RUN_ROOT):
+        return set()
+    return set(os.listdir(_RUN_ROOT))
+
+
+def _compute_delta(before: set, after: set) -> set:
+    """Compute newly created directories."""
+    return after - before
+
+
+def _read_manifest(run_dir: str) -> dict | None:
+    """Read manifest.json from run directory."""
+    manifest_path = os.path.join(run_dir, "manifest.json")
+    if not os.path.isfile(manifest_path):
+        return None
+    try:
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def _get_artifact_path_from_manifest(manifest: dict) -> str | None:
+    """Extract artifact.json path from manifest."""
+    artifacts = manifest.get("artifacts", [])
+    for artifact in artifacts:
+        if artifact.get("type") == "artifact":
+            rel_path = artifact.get("path")
+            if rel_path:
+                return os.path.join(_REPO_ROOT, rel_path)
+    return None
+
+
+def _read_decision_from_artifact(artifact_path: str) -> str | None:
+    """Read decision from artifact.json."""
+    if not os.path.isfile(artifact_path):
+        return None
+    try:
+        with open(artifact_path, 'r', encoding='utf-8') as f:
+            artifact = json.load(f)
+        return artifact.get("decision")
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def _derive_l4_run_path_from_artifact_path(artifact_path: str) -> str | None:
+    """
+    Derive l4_run directory path from artifact path.
+
+    Artifact path pattern: .../artifacts/artifacts/{run_id}/artifact.json
+    L4 run path pattern:   .../artifacts/run/l4_run_{run_id}/
+
+    This derivation uses data from manifest (artifact path), not internal algorithms.
+    """
+    # Extract the run_id from artifact path (e.g., run_071c64b5f425)
+    artifact_dir = os.path.dirname(artifact_path)
+    run_id = os.path.basename(artifact_dir)
+
+    # Construct l4_run path
+    l4_run_dir = os.path.join(_RUN_ROOT, f"l4_run_{run_id}")
+
+    if os.path.isdir(l4_run_dir):
+        return l4_run_dir
+    return None
+
+
+def _get_stdout_raw_kv(l4_run_dir: str) -> tuple[str | None, str | None]:
+    """Get stdout.raw.kv path and hash from l4_run directory."""
+    stdout_path = os.path.join(l4_run_dir, "stdout.raw.kv")
+    if os.path.isfile(stdout_path):
+        return stdout_path, _sha256_file(stdout_path)
+    return None, None
+
+
+def main():
+    # Wrong argument handling: single usage line to stderr
+    if len(sys.argv) != 2:
+        print("Usage: ./brok-run \"<input string>\"", file=sys.stderr)
+        return _EXIT_WRONG_ARGS
+
+    input_string = sys.argv[1]
+
+    # Create temporary input file
+    temp_fd = None
+    temp_path = None
+    try:
+        temp_fd, temp_path = tempfile.mkstemp(
+            prefix="brok_input_",
+            suffix=".txt",
+            dir=os.path.join(_REPO_ROOT, "artifacts")
+        )
+
+        # Write input string with trailing newline
+        content = (input_string + "\n").encode('utf-8')
+        os.write(temp_fd, content)
+        os.close(temp_fd)
+        temp_fd = None
+
+        # STEP B: Snapshot before invocation
+        dirs_before = _snapshot_run_dirs()
+
+        # STEP C: Invoke canonical ./brok command
+        result = subprocess.run(
+            [_BROK_PATH, "--input", temp_path],
+            capture_output=True,
+            text=True,
+            cwd=_REPO_ROOT
+        )
+
+        # STEP D: Snapshot after invocation and compute delta
+        dirs_after = _snapshot_run_dirs()
+        new_dirs = _compute_delta(dirs_before, dirs_after)
+
+        # Rule: There must be exactly 1 newly created directory
+        if len(new_dirs) != 1:
+            print(f"Wrapper failure: expected 1 new directory, found {len(new_dirs)}", file=sys.stderr)
+            return _EXIT_WRAPPER_FAILURE
+
+        # STEP E: Use identified new directory as run_dir
+        new_dir_name = new_dirs.pop()
+        run_dir = os.path.join(_RUN_ROOT, new_dir_name)
+
+        # Read manifest from run_dir
+        manifest = _read_manifest(run_dir)
+        if manifest is None:
+            print("Wrapper failure: cannot read manifest.json", file=sys.stderr)
+            return _EXIT_WRAPPER_FAILURE
+
+        # Get artifact path and read decision
+        artifact_path = _get_artifact_path_from_manifest(manifest)
+        if artifact_path is None:
+            print("Wrapper failure: cannot find artifact path in manifest", file=sys.stderr)
+            return _EXIT_WRAPPER_FAILURE
+
+        decision = _read_decision_from_artifact(artifact_path)
+        if decision is None:
+            print("Wrapper failure: cannot read decision from artifact", file=sys.stderr)
+            return _EXIT_WRAPPER_FAILURE
+
+        # Frozen JSON schema: all four fields always present
+        summary = {
+            "run_dir": run_dir,
+            "decision": decision,
+            "authoritative_stdout_raw_kv": None,
+            "authoritative_stdout_raw_kv_sha256": None,
+        }
+
+        authoritative_path = None
+
+        # Check if execution happened (from manifest)
+        execution_info = manifest.get("execution", {})
+        if execution_info.get("executed") is True:
+            # Derive l4_run path and get stdout.raw.kv
+            l4_run_dir = _derive_l4_run_path_from_artifact_path(artifact_path)
+            if l4_run_dir:
+                stdout_path, stdout_hash = _get_stdout_raw_kv(l4_run_dir)
+                if stdout_path:
+                    summary["authoritative_stdout_raw_kv"] = stdout_path
+                    summary["authoritative_stdout_raw_kv_sha256"] = stdout_hash
+                    authoritative_path = stdout_path
+
+        # Output line 1: JSON (frozen schema, single line)
+        print(json.dumps(summary, separators=(',', ':')))
+
+        # Output line 2: Authoritative output
+        if authoritative_path:
+            print(f"Authoritative output: {authoritative_path}")
+        else:
+            print("Authoritative output: NONE")
+
+        # Propagate exit code from ./brok
+        return result.returncode
+
+    finally:
+        # Clean up temp file
+        if temp_fd is not None:
+            try:
+                os.close(temp_fd)
+            except OSError:
+                pass
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+
+
+if __name__ == "__main__":
+    sys.exit(main())

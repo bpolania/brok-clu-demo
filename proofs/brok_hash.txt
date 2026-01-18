@@ -1,0 +1,17 @@
+1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+
+# ./brok SHA-256 Hash Provenance
+# ==============================
+#
+# File: ./brok
+# Hash: SHA-256
+# Frozen at: Phase L-4 closure
+#
+# This hash is authoritative. If ./brok changes, this file must be
+# updated by explicit decision, not automatically.
+#
+# Verification command:
+#   shasum -a 256 brok
+#
+# Expected output:
+#   1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944  brok
