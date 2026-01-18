@@ -1,0 +1,52 @@
+=== L-3 Single Envelope REJECT Run Evidence ===
+Date: 2026-01-18
+Test: Schema-valid alternative (STATUS_QUERY beta) → REJECT
+
+L-3 ACCEPT Envelope (AUTHORITATIVE):
+  - kind == 'ROUTE_CANDIDATE'
+  - payload.intent == 'STATUS_QUERY'
+  - payload.slots == {'target': 'alpha'} (no mode, no extras)
+
+Tested Proposal (SCHEMA-VALID, but OUTSIDE ENVELOPE):
+  - kind == 'ROUTE_CANDIDATE'
+  - payload.intent == 'STATUS_QUERY'
+  - payload.slots == {'target': 'beta'}  <-- 'beta' not in L-3 envelope
+
+Result: REJECT (L3_ENVELOPE_MISMATCH)
+
+================================================================================
+
+{
+  "artifact_version": "artifact_v1",
+  "construction": {
+    "proposal_count": 1,
+    "ruleset_id": "M2_RULESET_V1",
+    "selected_proposal_index": null
+  },
+  "decision": "REJECT",
+  "input_ref": "test_input",
+  "proposal_set_ref": "test_proposal_set.json",
+  "reject_payload": {
+    "notes": [
+      "L3_ENVELOPE_MISMATCH"
+    ],
+    "reason_code": "INVALID_PROPOSALS"
+  },
+  "run_id": "l3_reject_test"
+}
+
+================================================================================
+
+The authoritative L-3 envelope gate in artifact/src/builder.py:_check_l3_envelope()
+ensures that ONLY the explicitly enumerated envelope can ACCEPT.
+
+Schema-valid alternatives are REJECTED:
+  - STATUS_QUERY beta → REJECT (L3_ENVELOPE_MISMATCH)
+  - STATUS_QUERY gamma → REJECT (L3_ENVELOPE_MISMATCH)
+  - STOP_SUBSYSTEM alpha → REJECT (L3_ENVELOPE_MISMATCH)
+  - RESTART_SUBSYSTEM alpha → REJECT (L3_ENVELOPE_MISMATCH)
+  - STATUS_QUERY alpha + mode slot → REJECT (L3_ENVELOPE_MISMATCH)
+
+This proves the single-envelope contract: exactly ONE explicitly enumerated
+envelope can ACCEPT, all others REJECT regardless of schema validity.
+

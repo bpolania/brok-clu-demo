@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """
-Phase M-2 Artifact Builder
+Phase M-2 Artifact Builder (with L-3 Envelope Gate)
 
 Constructs authoritative wrapper-level decision records (Artifacts) from
 non-authoritative ProposalSets (M-1 output).
 
 Uses Python standard library only (no external dependencies).
 
-Construction follows M2_RULESET_V1:
+Construction follows M2_RULESET_V1 with L-3 Envelope Gate:
 1. If ProposalSet is invalid: REJECT with INVALID_PROPOSALS
 2. If ProposalSet has zero proposals: REJECT with NO_PROPOSALS
-3. If ProposalSet has exactly one proposal: ACCEPT with route from proposal
+3. If ProposalSet has exactly one proposal:
+   a. If L3_ENVELOPE_ENABLED and proposal matches L-3 envelope: ACCEPT
+   b. If L3_ENVELOPE_ENABLED and proposal does NOT match: REJECT (L3_ENVELOPE_MISMATCH)
+   c. If not L3_ENVELOPE_ENABLED: ACCEPT (original M2 behavior)
 4. If ProposalSet has 2+ proposals: REJECT with AMBIGUOUS_PROPOSALS
+
+L-3 Envelope Gate:
+The L-3 demo requires exactly ONE explicitly enumerated ACCEPT envelope.
+Schema-valid alternatives (e.g., STATUS_QUERY on beta) are REJECTED.
+This gate is AUTHORITATIVE and does not depend on LLM engine behavior.
 
 Guarantees:
 - Deterministic: same input always produces byte-identical output
@@ -43,6 +51,77 @@ MAX_NOTES = 8
 VALID_INTENTS = frozenset(["RESTART_SUBSYSTEM", "STOP_SUBSYSTEM", "STATUS_QUERY"])
 VALID_TARGETS = frozenset(["alpha", "beta", "gamma"])
 VALID_MODES = frozenset(["graceful", "immediate"])
+
+# =============================================================================
+# Phase L-3: Single ACCEPT Envelope Gate (Authoritative)
+# =============================================================================
+# L-3 demonstrates exactly ONE explicitly enumerated ACCEPT envelope.
+# All schema-valid alternatives outside this envelope are REJECTED.
+#
+# This gate is AUTHORITATIVE and runs in the artifact decision path.
+# It is NOT dependent on LLM engine behavior.
+#
+# Single Envelope Definition:
+#   - ProposalSet contains exactly 1 proposal
+#   - kind == "ROUTE_CANDIDATE"
+#   - payload.intent == "STATUS_QUERY"
+#   - payload.slots == {"target": "alpha"} (no mode, no extra keys)
+# =============================================================================
+
+L3_ENVELOPE_ENABLED = True  # L-3 demo gate active
+
+L3_ENVELOPE = {
+    "kind": "ROUTE_CANDIDATE",
+    "intent": "STATUS_QUERY",
+    "slots": {"target": "alpha"}  # Exact match required, no extra keys
+}
+
+
+def _check_l3_envelope(proposal: Dict) -> bool:
+    """
+    Check if a proposal matches the L-3 single ACCEPT envelope exactly.
+
+    This is an AUTHORITATIVE check in the artifact decision path.
+    It ensures only the explicitly enumerated envelope can ACCEPT.
+
+    Returns:
+        True if proposal matches the L-3 envelope exactly.
+        False otherwise (even if schema-valid).
+    """
+    if not isinstance(proposal, dict):
+        return False
+
+    # Check kind
+    if proposal.get("kind") != L3_ENVELOPE["kind"]:
+        return False
+
+    # Check payload exists and is dict
+    payload = proposal.get("payload")
+    if not isinstance(payload, dict):
+        return False
+
+    # Check intent
+    if payload.get("intent") != L3_ENVELOPE["intent"]:
+        return False
+
+    # Check slots exists and is dict
+    slots = payload.get("slots")
+    if not isinstance(slots, dict):
+        return False
+
+    # Check slots match EXACTLY (no extra keys like "mode")
+    if slots != L3_ENVELOPE["slots"]:
+        return False
+
+    # Check no extra keys in payload (only intent and slots allowed)
+    if set(payload.keys()) != {"intent", "slots"}:
+        return False
+
+    # Check no extra keys in proposal (only kind and payload allowed)
+    if set(proposal.keys()) != {"kind", "payload"}:
+        return False
+
+    return True
 
 
 def build_artifact(
@@ -99,6 +178,23 @@ def build_artifact(
     # Step 3: Check for exactly one proposal
     if proposal_count == 1:
         proposal = proposals[0]
+
+        # L-3 Envelope Gate (Authoritative)
+        # When enabled, only the explicitly enumerated envelope can ACCEPT.
+        # Schema-valid alternatives outside the envelope are REJECTED.
+        if L3_ENVELOPE_ENABLED:
+            if not _check_l3_envelope(proposal):
+                # Schema-valid but outside L-3 envelope → REJECT
+                return _build_reject_artifact(
+                    run_id=run_id,
+                    input_ref=input_ref,
+                    proposal_set_ref=proposal_set_ref,
+                    reason_code="INVALID_PROPOSALS",
+                    proposal_count=1,
+                    validator_errors=[],
+                    notes=["L3_ENVELOPE_MISMATCH"]
+                )
+
         route = _extract_route(proposal)
         return _build_accept_artifact(
             run_id=run_id,

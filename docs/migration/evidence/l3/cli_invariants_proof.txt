@@ -1,0 +1,40 @@
+Phase L-3 CLI Invariants Proof
+==============================
+Date: 2026-01-17
+Method: Direct flag rejection testing (not using --help or -h)
+
+Test 1: Unknown flag with valid --input
+Command: python3 brok --unknown-flag --input inputs/l3_accept_demo.txt
+Result: error: unrecognized arguments: --unknown-flag
+Status: PASS (unknown flags rejected)
+
+Test 2: --dry-run flag (commonly added, must reject)
+Command: python3 brok --dry-run --input inputs/l3_accept_demo.txt
+Result: error: unrecognized arguments: --dry-run
+Status: PASS (--dry-run rejected)
+
+Test 3: --verbose flag (commonly added, must reject)
+Command: python3 brok --verbose --input inputs/l3_accept_demo.txt
+Result: error: unrecognized arguments: --verbose
+Status: PASS (--verbose rejected)
+
+Test 4: --config flag (must reject)
+Command: python3 brok --config test.txt --input inputs/l3_accept_demo.txt
+Result: error: unrecognized arguments: --config
+Status: PASS (--config rejected)
+
+Test 5: Missing --input (must fail)
+Command: python3 brok
+Result: error: the following arguments are required: --input
+Status: PASS (--input is required)
+
+Conclusion: CLI surface locked to --input only. No new flags accepted.
+
+Code inspection (brok:44-60):
+```python
+parser = argparse.ArgumentParser(...)
+parser.add_argument('--input', required=True, help='Input file path')
+args = parser.parse_args()
+```
+
+Only one add_argument call for --input. No other flags defined.
