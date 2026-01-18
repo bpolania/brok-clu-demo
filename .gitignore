@@ -6,7 +6,7 @@ artifacts/
 semantic/regression/runs/
 semantic/artifacts/
 
-# Python bytecode (Phase M-1 proposal generator)
+# Python bytecode
 __pycache__/
 *.pyc
 *.pyo
