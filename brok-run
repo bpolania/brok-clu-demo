@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brok-CLU Wrapper - Derived UX Convenience Layer (Phase L-5)
+Brok-CLU Wrapper - Derived UX Convenience Layer (Phase L-6)
 
 This is an OPTIONAL wrapper around the canonical ./brok CLI.
 It provides a convenience interface for interactive use.
@@ -18,11 +18,12 @@ Output contract (exactly two lines on success):
   Line 1: JSON with frozen schema (all fields always present)
   Line 2: "Authoritative output: <path>" or "Authoritative output: NONE"
 
-Run identification method:
+Run identification method (L-6):
   Filesystem delta within artifacts/run/ (black-box, no internal coupling)
   - Snapshot directories before ./brok invocation
   - Snapshot directories after ./brok invocation
-  - New directory = delta (must be exactly 1)
+  - Multiple new directories allowed per invocation
+  - Authority selection: exactly one directory with stdout.raw.kv
 """
 
 import hashlib
@@ -54,16 +55,52 @@ def _sha256_file(path: str) -> str:
     return hasher.hexdigest()
 
 
-def _snapshot_run_dirs() -> set:
+def _snapshot_run_dirs(run_root: str = None) -> set:
     """Snapshot immediate child directories of run root."""
-    if not os.path.isdir(_RUN_ROOT):
+    root = run_root or _RUN_ROOT
+    if not os.path.isdir(root):
         return set()
-    return set(os.listdir(_RUN_ROOT))
+    return set(os.listdir(root))
 
 
 def _compute_delta(before: set, after: set) -> set:
     """Compute newly created directories."""
     return after - before
+
+
+def _find_authoritative_dirs(new_dirs: set, run_root: str = None) -> list:
+    """
+    Find directories containing stdout.raw.kv (authoritative execution output).
+
+    L-6 contract: authority is determined solely by presence of stdout.raw.kv.
+    Directory names, timestamps, ordering, sizes are ignored.
+
+    Returns list of absolute paths to directories containing stdout.raw.kv.
+    """
+    root = run_root or _RUN_ROOT
+    authoritative = []
+    for dir_name in new_dirs:
+        dir_path = os.path.join(root, dir_name)
+        stdout_path = os.path.join(dir_path, "stdout.raw.kv")
+        if os.path.isfile(stdout_path):
+            authoritative.append(dir_path)
+    return authoritative
+
+
+def _find_observability_dir(new_dirs: set, run_root: str = None) -> str | None:
+    """
+    Find an observability directory (one with manifest.json but no stdout.raw.kv).
+
+    Used to read decision when no execution occurred.
+    """
+    root = run_root or _RUN_ROOT
+    for dir_name in new_dirs:
+        dir_path = os.path.join(root, dir_name)
+        manifest_path = os.path.join(dir_path, "manifest.json")
+        stdout_path = os.path.join(dir_path, "stdout.raw.kv")
+        if os.path.isfile(manifest_path) and not os.path.isfile(stdout_path):
+            return dir_path
+    return None
 
 
 def _read_manifest(run_dir: str) -> dict | None:
@@ -101,33 +138,34 @@ def _read_decision_from_artifact(artifact_path: str) -> str | None:
         return None
 
 
-def _derive_l4_run_path_from_artifact_path(artifact_path: str) -> str | None:
-    """
-    Derive l4_run directory path from artifact path.
-
-    Artifact path pattern: .../artifacts/artifacts/{run_id}/artifact.json
-    L4 run path pattern:   .../artifacts/run/l4_run_{run_id}/
-
-    This derivation uses data from manifest (artifact path), not internal algorithms.
-    """
-    # Extract the run_id from artifact path (e.g., run_071c64b5f425)
-    artifact_dir = os.path.dirname(artifact_path)
-    run_id = os.path.basename(artifact_dir)
-
-    # Construct l4_run path
-    l4_run_dir = os.path.join(_RUN_ROOT, f"l4_run_{run_id}")
-
-    if os.path.isdir(l4_run_dir):
-        return l4_run_dir
-    return None
-
-
-def _get_stdout_raw_kv(l4_run_dir: str) -> tuple[str | None, str | None]:
-    """Get stdout.raw.kv path and hash from l4_run directory."""
-    stdout_path = os.path.join(l4_run_dir, "stdout.raw.kv")
+def _get_stdout_raw_kv(run_dir: str) -> tuple[str | None, str | None]:
+    """Get stdout.raw.kv path and hash from run directory."""
+    stdout_path = os.path.join(run_dir, "stdout.raw.kv")
     if os.path.isfile(stdout_path):
-        return stdout_path, _sha256_file(stdout_path)
+        try:
+            return stdout_path, _sha256_file(stdout_path)
+        except (IOError, OSError):
+            return None, None
     return None, None
+
+
+def _find_decision_from_new_dirs(new_dirs: set, run_root: str = None) -> str | None:
+    """
+    Find decision by reading manifest from any new directory.
+
+    Tries authoritative dirs first, then observability dirs.
+    """
+    root = run_root or _RUN_ROOT
+    for dir_name in new_dirs:
+        dir_path = os.path.join(root, dir_name)
+        manifest = _read_manifest(dir_path)
+        if manifest:
+            artifact_path = _get_artifact_path_from_manifest(manifest)
+            if artifact_path:
+                decision = _read_decision_from_artifact(artifact_path)
+                if decision:
+                    return decision
+    return None
 
 
 def main():
@@ -154,10 +192,10 @@ def main():
         os.close(temp_fd)
         temp_fd = None
 
-        # STEP B: Snapshot before invocation
+        # STEP 1: Snapshot before invocation
         dirs_before = _snapshot_run_dirs()
 
-        # STEP C: Invoke canonical ./brok command
+        # STEP 2: Invoke canonical ./brok command
         result = subprocess.run(
             [_BROK_PATH, "--input", temp_path],
             capture_output=True,
@@ -165,57 +203,81 @@ def main():
             cwd=_REPO_ROOT
         )
 
-        # STEP D: Snapshot after invocation and compute delta
+        # STEP 3: Snapshot after invocation and compute delta
         dirs_after = _snapshot_run_dirs()
         new_dirs = _compute_delta(dirs_before, dirs_after)
 
-        # Rule: There must be exactly 1 newly created directory
-        if len(new_dirs) != 1:
-            print(f"Wrapper failure: expected 1 new directory, found {len(new_dirs)}", file=sys.stderr)
+        # L-6: Multiple directories per logical run are allowed
+        # Authority selection based solely on stdout.raw.kv presence
+
+        # STEP 4: Find authoritative directories (those with stdout.raw.kv in delta)
+        authoritative_dirs = _find_authoritative_dirs(new_dirs)
+
+        # STEP 5: Apply L-6 selection rule
+        if len(authoritative_dirs) > 1:
+            # Contract violation: multiple authoritative directories
+            print(f"Wrapper failure: contract violation - {len(authoritative_dirs)} directories contain stdout.raw.kv", file=sys.stderr)
             return _EXIT_WRAPPER_FAILURE
 
-        # STEP E: Use identified new directory as run_dir
-        new_dir_name = new_dirs.pop()
-        run_dir = os.path.join(_RUN_ROOT, new_dir_name)
+        # Determine run_dir and authoritative output
+        authoritative_run_dir = None
+        authoritative_path = None
+        authoritative_hash = None
 
-        # Read manifest from run_dir
-        manifest = _read_manifest(run_dir)
-        if manifest is None:
-            print("Wrapper failure: cannot read manifest.json", file=sys.stderr)
-            return _EXIT_WRAPPER_FAILURE
+        if len(authoritative_dirs) == 1:
+            # Exactly one authoritative directory in delta - use it
+            authoritative_run_dir = authoritative_dirs[0]
+            stdout_path, stdout_hash = _get_stdout_raw_kv(authoritative_run_dir)
+            if stdout_path is None:
+                # stdout.raw.kv exists but is unreadable
+                print("Wrapper failure: stdout.raw.kv is unreadable", file=sys.stderr)
+                return _EXIT_WRAPPER_FAILURE
+            authoritative_path = stdout_path
+            authoritative_hash = stdout_hash
 
-        # Get artifact path and read decision
-        artifact_path = _get_artifact_path_from_manifest(manifest)
-        if artifact_path is None:
-            print("Wrapper failure: cannot find artifact path in manifest", file=sys.stderr)
-            return _EXIT_WRAPPER_FAILURE
+        # L-6 Path A: If 0 authoritative dirs in delta, treat as "no execution occurred"
+        # Do NOT attempt to derive execution directory from manifest or outside delta
 
-        decision = _read_decision_from_artifact(artifact_path)
+        # STEP 6: Find decision from any new directory with manifest
+        decision = _find_decision_from_new_dirs(new_dirs)
         if decision is None:
-            print("Wrapper failure: cannot read decision from artifact", file=sys.stderr)
+            print("Wrapper failure: cannot determine decision from artifacts", file=sys.stderr)
             return _EXIT_WRAPPER_FAILURE
+
+        # STEP 7: Determine run_dir for JSON output
+        # Use authoritative dir if available, otherwise use observability dir
+        if authoritative_run_dir:
+            run_dir = authoritative_run_dir
+        else:
+            # No execution - use observability directory
+            obs_dir = _find_observability_dir(new_dirs)
+            if obs_dir:
+                run_dir = obs_dir
+            elif len(new_dirs) > 0:
+                # Fall back to any new directory
+                run_dir = os.path.join(_RUN_ROOT, next(iter(new_dirs)))
+            else:
+                print("Wrapper failure: no new directories created", file=sys.stderr)
+                return _EXIT_WRAPPER_FAILURE
 
         # Frozen JSON schema: all four fields always present
         summary = {
             "run_dir": run_dir,
             "decision": decision,
-            "authoritative_stdout_raw_kv": None,
-            "authoritative_stdout_raw_kv_sha256": None,
+            "authoritative_stdout_raw_kv": authoritative_path,
+            "authoritative_stdout_raw_kv_sha256": authoritative_hash,
         }
 
-        authoritative_path = None
-
-        # Check if execution happened (from manifest)
-        execution_info = manifest.get("execution", {})
-        if execution_info.get("executed") is True:
-            # Derive l4_run path and get stdout.raw.kv
-            l4_run_dir = _derive_l4_run_path_from_artifact_path(artifact_path)
-            if l4_run_dir:
-                stdout_path, stdout_hash = _get_stdout_raw_kv(l4_run_dir)
-                if stdout_path:
-                    summary["authoritative_stdout_raw_kv"] = stdout_path
-                    summary["authoritative_stdout_raw_kv_sha256"] = stdout_hash
-                    authoritative_path = stdout_path
+        # L-6B: Explicit warning for ACCEPT + null authoritative (Path A contract boundary)
+        if decision == "ACCEPT" and authoritative_path is None:
+            print(
+                "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery).",
+                file=sys.stderr
+            )
+            print(
+                "Note: Under Path A, brok-run does not search outside the delta set for authoritative output.",
+                file=sys.stderr
+            )
 
         # Output line 1: JSON (frozen schema, single line)
         print(json.dumps(summary, separators=(',', ':')))

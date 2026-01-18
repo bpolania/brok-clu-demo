@@ -1,0 +1,122 @@
+========================================================================
+Phase L-6B Evidence: Contract Boundary Reproduction + Warning Behavior
+========================================================================
+Generated: 2026-01-18 UTC
+
+------------------------------------------------------------------------
+PART 1: Contract Boundary Reproduction
+------------------------------------------------------------------------
+
+The following demonstrates the known Path A contract boundary where ACCEPT
+decisions result in null authoritative output when stdout.raw.kv is not
+found in the delta set.
+
+Command: ./brok-run "create payment"
+
+Expected wrapper behavior (Path A contract):
+- ACCEPT decision from artifact layer
+- Wrapper checks filesystem delta for stdout.raw.kv
+- stdout.raw.kv not found in newly created run directories
+- Wrapper reports authoritative=null
+
+Actual wrapper output (stderr + stdout):
+Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery).
+Note: Under Path A, brok-run does not search outside the delta set for authoritative output.
+{"run_dir":"<observability_dir>","decision":"ACCEPT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null}
+Authoritative output: NONE
+
+Verification - canonical ./brok output:
+  Authoritative output: <repo>/artifacts/run/l4_run_run_<hash>/stdout.raw.kv
+  Exit code: 0
+  decision=ACCEPT executed=true
+
+ANALYSIS:
+- Canonical ./brok reports authoritative output at a path
+- Wrapper reports authoritative=null
+- Out of scope for Path A; brok-run cannot establish execution from delta-only discovery.
+- Authoritative stdout.raw.kv was not found in the delta set.
+- Warning message explicitly states the contract boundary
+
+------------------------------------------------------------------------
+PART 2: Warning Message Verification (L-6B Enhancement)
+------------------------------------------------------------------------
+
+L-6B adds explicit warning message when ACCEPT + authoritative=null.
+The warning appears on stderr and clearly states the contract boundary.
+
+Expected warning format (exact, two lines):
+Line 1: "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)."
+Line 2: "Note: Under Path A, brok-run does not search outside the delta set for authoritative output."
+
+The evidence above shows this warning was printed to stderr.
+
+L-5 tests verify the warning:
+- test_wrapper_accept_produces_json: Checks exact warning lines in stderr
+- test_wrapper_accept_authoritative_line: Checks warning appears when ACCEPT has null authoritative
+
+------------------------------------------------------------------------
+PART 3: Test Evidence
+------------------------------------------------------------------------
+
+L-5 tests (14/14 passed):
+[PASS] ./brok unchanged (hash verified)
+[PASS] Wrapper rejects zero arguments
+[PASS] Wrapper rejects too many arguments
+[PASS] Wrapper ACCEPT produces valid JSON with frozen schema
+[PASS] ACCEPT run_dir exists
+[PASS] Paths in ACCEPT JSON are valid
+[PASS] SHA-256 check skipped (authoritative not in delta)
+[PASS] Wrapper prints correct authoritative line for ACCEPT
+[PASS] Wrapper REJECT produces valid JSON with frozen schema
+[PASS] REJECT run_dir is in filesystem delta
+[PASS] Wrapper prints exact authoritative line for REJECT
+[PASS] Wrapper propagates exit code correctly
+[PASS] Wrapper cleans up temp files
+[PASS] Exit codes are distinct (0=success, 2=wrong_args, 3=wrapper_failure)
+
+L-6 tests (10/10 passed):
+[PASS] Scenario 1: Multi-dir delta, single authoritative selected
+[PASS] Scenario 1: Selection by stdout.raw.kv presence, not name
+[PASS] Scenario 2: No authoritative in delta, valid state
+[PASS] Scenario 2: Single dir, no stdout.raw.kv, valid state
+[PASS] Scenario 3: Multiple authoritative detected (violation)
+[PASS] Scenario 3: Exact count verified (3 authoritative)
+[PASS] Edge: Empty delta handled correctly
+[PASS] Edge: Delta computation correct
+[PASS] Integration: REJECT (authoritative=null)
+[PASS] Integration: ACCEPT (stdout.raw.kv not in delta, authoritative=null)
+
+------------------------------------------------------------------------
+PART 4: Guardrail Verification
+------------------------------------------------------------------------
+
+./brok canonical CLI remains unchanged:
+
+============================================================
+Guardrail: Verify ./brok Unchanged
+============================================================
+
+--- Check 1: SHA-256 Hash ---
+Expected: 1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+Source:   proofs/brok_hash.txt
+Actual:   1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+[PASS] Hash matches
+
+--- Check 2: git diff ---
+Result: git diff clean
+[PASS] No uncommitted changes
+
+--- Check 3: git status ---
+Result: git status clean
+[PASS] Not marked as modified
+
+============================================================
+[PASS] ./brok is UNCHANGED
+
+All guardrail checks passed.
+The canonical CLI entrypoint has not been modified.
+Authority invariants are preserved.
+
+========================================================================
+END OF L-6B EVIDENCE
+========================================================================
