@@ -1,0 +1,24 @@
+============================================================
+Guardrail: Verify ./brok Unchanged
+============================================================
+
+--- Check 1: SHA-256 Hash ---
+Expected: 1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+Source:   proofs/brok_hash.txt
+Actual:   1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+[PASS] Hash matches
+
+--- Check 2: git diff ---
+Result: git diff clean
+[PASS] No uncommitted changes
+
+--- Check 3: git status ---
+Result: git status clean
+[PASS] Not marked as modified
+
+============================================================
+[PASS] ./brok is UNCHANGED
+
+All guardrail checks passed.
+The canonical CLI entrypoint has not been modified.
+Authority invariants are preserved.

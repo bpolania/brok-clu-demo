@@ -1,0 +1,50 @@
+========================================================================
+Phase L-5 Wrapper Tests (Closure-Grade)
+========================================================================
+
+--- 1. ./brok unchanged ---
+[PASS] ./brok unchanged (hash verified)
+
+--- 2. Wrapper rejects no args ---
+[PASS] Wrapper rejects zero arguments
+
+--- 3. Wrapper rejects too many args ---
+[PASS] Wrapper rejects too many arguments
+
+--- 4. Wrapper ACCEPT produces JSON ---
+[PASS] Wrapper ACCEPT produces valid JSON with frozen schema
+
+--- 5. Wrapper ACCEPT run_dir is delta ---
+[PASS] ACCEPT run_dir equals filesystem delta directory
+
+--- 6. Wrapper ACCEPT paths exist ---
+[PASS] Paths in ACCEPT JSON exist
+
+--- 7. Wrapper ACCEPT sha256 matches ---
+[PASS] SHA-256 in JSON matches actual stdout.raw.kv
+
+--- 8. Wrapper ACCEPT authoritative line ---
+[PASS] Wrapper prints exact authoritative line for ACCEPT
+
+--- 9. Wrapper REJECT produces JSON ---
+[PASS] Wrapper REJECT produces valid JSON with frozen schema
+
+--- 10. Wrapper REJECT run_dir is delta ---
+[PASS] REJECT run_dir equals filesystem delta directory
+
+--- 11. Wrapper REJECT authoritative line ---
+[PASS] Wrapper prints exact authoritative line for REJECT
+
+--- 12. Wrapper propagates exit code ---
+[PASS] Wrapper propagates exit code correctly
+
+--- 13. Wrapper cleans temp files ---
+[PASS] Wrapper cleans up temp files
+
+--- 14. Wrapper failure exit codes ---
+[PASS] Exit codes are distinct (0=success, 2=wrong_args, 3=wrapper_failure)
+
+========================================================================
+Tests: 14/14 passed
+All L-5 wrapper tests PASSED
+========================================================================
