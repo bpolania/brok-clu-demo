@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "proposal_set.schema.json",
+  "title": "ProposalSet",
+  "description": "Non-authoritative proposal set for Phase M-1. Proposals have no authority and do not imply execution outcomes.",
+  "type": "object",
+  "required": ["schema_version", "input", "proposals"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "m1.0",
+      "description": "Schema version identifier. Must be exactly 'm1.0'."
+    },
+    "input": {
+      "type": "object",
+      "required": ["raw"],
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": "string",
+          "maxLength": 4096,
+          "description": "Exact user input. No trimming. Empty string is valid."
+        }
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/Proposal"
+      },
+      "description": "Array of non-authoritative proposals. May be empty. Order is deterministic."
+    },
+    "errors": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "description": "Optional error codes. Non-authoritative. Does not imply decisions."
+    }
+  },
+  "$defs": {
+    "Proposal": {
+      "type": "object",
+      "required": ["kind", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["ROUTE_CANDIDATE"],
+          "description": "Proposal kind. ROUTE_CANDIDATE indicates a potential command routing."
+        },
+        "payload": {
+          "$ref": "#/$defs/RouteCandidatePayload"
+        }
+      }
+    },
+    "RouteCandidatePayload": {
+      "type": "object",
+      "required": ["intent", "slots"],
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "type": "string",
+          "enum": ["RESTART_SUBSYSTEM", "STOP_SUBSYSTEM", "STATUS_QUERY"],
+          "description": "Candidate intent from closed set."
+        },
+        "slots": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "type": "string",
+              "enum": ["alpha", "beta", "gamma"],
+              "description": "Target subsystem from closed set."
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["graceful", "immediate"],
+              "description": "Execution mode. Optional for STATUS_QUERY."
+            }
+          }
+        }
+      }
+    }
+  }
+}

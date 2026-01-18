@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "artifact.schema.json",
+  "title": "Artifact",
+  "description": "Authoritative wrapper-level decision record for Phase M-2. Records ACCEPT/REJECT decisions. Does not override execution truth (stdout.raw.kv).",
+  "type": "object",
+  "required": ["artifact_version", "run_id", "input_ref", "proposal_set_ref", "decision", "construction"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_version": {
+      "type": "string",
+      "const": "artifact_v1",
+      "description": "Artifact schema version. Must be exactly 'artifact_v1'."
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "maxLength": 64,
+      "description": "User-provided run identifier. Allowed: A-Za-z0-9._- (max 64 chars)."
+    },
+    "input_ref": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^[^/]",
+      "description": "Repo-relative path to input file. Must not start with '/' (no absolute paths). External inputs are copied to artifacts/inputs/<run-id>/input.raw."
+    },
+    "proposal_set_ref": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^[^/]",
+      "description": "Repo-relative path to proposal_set.json. Must not start with '/' (no absolute paths)."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ACCEPT", "REJECT"],
+      "description": "Wrapper-level decision. ACCEPT triggers execution; REJECT does not."
+    },
+    "accept_payload": {
+      "$ref": "#/$defs/AcceptPayload"
+    },
+    "reject_payload": {
+      "$ref": "#/$defs/RejectPayload"
+    },
+    "construction": {
+      "$ref": "#/$defs/Construction"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "decision": { "const": "ACCEPT" } }
+      },
+      "then": {
+        "required": ["accept_payload"],
+        "properties": {
+          "reject_payload": false
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "REJECT" } }
+      },
+      "then": {
+        "required": ["reject_payload"],
+        "properties": {
+          "accept_payload": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "AcceptPayload": {
+      "type": "object",
+      "required": ["kind", "route"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "ROUTE",
+          "description": "Payload kind for accepted artifacts."
+        },
+        "route": {
+          "$ref": "#/$defs/Route"
+        }
+      }
+    },
+    "Route": {
+      "type": "object",
+      "required": ["intent", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "type": "string",
+          "enum": ["RESTART_SUBSYSTEM", "STOP_SUBSYSTEM", "STATUS_QUERY"],
+          "description": "Route intent from closed set (aligned with M-1)."
+        },
+        "target": {
+          "type": "string",
+          "enum": ["alpha", "beta", "gamma"],
+          "description": "Target subsystem from closed set (aligned with M-1)."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["graceful", "immediate"],
+          "description": "Execution mode. Present for RESTART/STOP intents."
+        }
+      }
+    },
+    "RejectPayload": {
+      "type": "object",
+      "required": ["reason_code"],
+      "additionalProperties": false,
+      "properties": {
+        "reason_code": {
+          "type": "string",
+          "enum": ["NO_PROPOSALS", "AMBIGUOUS_PROPOSALS", "INVALID_PROPOSALS"],
+          "description": "Rejection reason from closed set."
+        },
+        "notes": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[A-Z0-9_:]+$"
+          },
+          "description": "Optional bounded code-like notes. No free-form narrative."
+        }
+      }
+    },
+    "Construction": {
+      "type": "object",
+      "required": ["ruleset_id", "proposal_count"],
+      "additionalProperties": false,
+      "properties": {
+        "ruleset_id": {
+          "type": "string",
+          "const": "M2_RULESET_V1",
+          "description": "Construction ruleset identifier."
+        },
+        "selected_proposal_index": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 7,
+          "description": "Index of selected proposal (0-based). Null if REJECT."
+        },
+        "proposal_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "description": "Number of proposals in input ProposalSet."
+        },
+        "validator_errors": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "description": "Bounded validation error codes if proposals invalid."
+        }
+      }
+    }
+  }
+}

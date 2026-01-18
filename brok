@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""
+Brok-CLU CLI - Canonical entrypoint
+
+This is the single canonical CLI for the Brok-CLU pipeline.
+It accepts only --input <file>, matching the PoC v2 execution contract.
+
+Usage:
+    ./brok --input <file>
+
+The pipeline:
+    INPUT -> PROPOSAL (derived) -> ARTIFACT (authoritative) -> EXECUTION (frozen)
+
+Authority model:
+    - Proposals are DERIVED and NON-AUTHORITATIVE
+    - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY
+    - stdout.raw.kv is the ONLY AUTHORITATIVE EXECUTION OUTPUT
+"""
+
+import argparse
+import hashlib
+import os
+import sys
+
+# Resolve repo root from this script's location
+_SCRIPT_PATH = os.path.abspath(__file__)
+_REPO_ROOT = os.path.dirname(_SCRIPT_PATH)
+
+# Run-ID generation (deterministic, internal)
+_RUN_ID_SALT = "M3_RUN_ID_V1"
+
+
+def _generate_run_id(input_path: str) -> str:
+    """Generate deterministic run ID from input file content."""
+    with open(input_path, 'rb') as f:
+        content = f.read()
+    hasher = hashlib.sha256()
+    hasher.update(_RUN_ID_SALT.encode('utf-8'))
+    hasher.update(content)
+    return f"run_{hasher.hexdigest()[:12]}"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='brok',
+        description='Brok-CLU Pipeline',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+Authority model:
+  - Proposals are DERIVED and NON-AUTHORITATIVE
+  - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY
+  - stdout.raw.kv is the ONLY AUTHORITATIVE EXECUTION OUTPUT
+
+Exit codes:
+  0  Success (including REJECT decisions)
+  1  Operational failure
+"""
+    )
+    parser.add_argument('--input', required=True, help='Input file path')
+
+    args = parser.parse_args()
+
+    # Validate input exists
+    if not os.path.isfile(args.input):
+        print(f"ERROR: Input file not found: {args.input}", file=sys.stderr)
+        return 1
+
+    # Generate deterministic run ID internally
+    run_id = _generate_run_id(args.input)
+
+    # Import and invoke orchestrator with internal parameters
+    sys.path.insert(0, os.path.join(_REPO_ROOT, 'm3', 'src'))
+    sys.path.insert(0, os.path.join(_REPO_ROOT, 'proposal', 'src'))
+    sys.path.insert(0, os.path.join(_REPO_ROOT, 'artifact', 'src'))
+
+    from orchestrator import run_pipeline
+
+    return run_pipeline(
+        input_file=args.input,
+        run_id=run_id,
+        repo_root=_REPO_ROOT,
+        verbose=True
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,22 @@
+# Phase L-2 Validator Immutability Evidence
+# Generated after L-2 remediation (offline engine)
+
+## Validator/Artifact Rule Files (SHA256 Hashes)
+
+### File: artifact/src/validator.py
+Hash: 28f7f3e3387a4e48616561095ea0c06bada44161124dfa6466228b2059a4f8e1
+
+### File: proposal/src/validator.py
+Hash: 4ad2993ec4aaf85fd759dc702d25875b252663f6cd8d4b5e5c4902d2e3596f20
+
+### File: artifact/src/builder.py
+Hash: 6d0295f9ef18935f416bf5123c4773b9fcefd6d7c4475359d699a24e378fc501
+
+## Baseline Comparison
+
+Command: git diff brok-demo-v1 -- artifact/src/validator.py proposal/src/validator.py artifact/src/builder.py
+
+Result: (empty - no changes from baseline)
+
+## Conclusion
+All artifact decision rules and validators are unchanged from baseline brok-demo-v1.

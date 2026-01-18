@@ -1,0 +1,16 @@
+usage: brok [-h] --input INPUT
+
+Brok-CLU Pipeline
+
+options:
+  -h, --help     show this help message and exit
+  --input INPUT  Input file path
+
+Authority model:
+  - Proposals are DERIVED and NON-AUTHORITATIVE
+  - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY
+  - stdout.raw.kv is the ONLY AUTHORITATIVE EXECUTION OUTPUT
+
+Exit codes:
+  0  Success (including REJECT decisions)
+  1  Operational failure

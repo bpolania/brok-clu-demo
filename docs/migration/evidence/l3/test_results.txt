@@ -1,0 +1,49 @@
+===========================================================================
+Phase L-3 Single-Envelope Acceptance Tests
+===========================================================================
+
+L-3 SINGLE ACCEPT ENVELOPE (AUTHORITATIVE):
+  - kind == 'ROUTE_CANDIDATE'
+  - payload.intent == 'STATUS_QUERY'
+  - payload.slots == {'target': 'alpha'} (no mode, no extras)
+
+Schema-valid alternatives are REJECTED by the authoritative gate.
+Gate location: artifact/src/builder.py
+
+[PASS] Exact L-3 envelope → ACCEPT
+       Exact L-3 envelope → ACCEPT
+[PASS] STATUS_QUERY beta → REJECT
+       STATUS_QUERY target=beta → REJECT (L3_ENVELOPE_MISMATCH)
+[PASS] STATUS_QUERY gamma → REJECT
+       STATUS_QUERY target=gamma → REJECT (L3_ENVELOPE_MISMATCH)
+[PASS] STOP_SUBSYSTEM alpha → REJECT
+       STOP_SUBSYSTEM target=alpha → REJECT (L3_ENVELOPE_MISMATCH)
+[PASS] RESTART_SUBSYSTEM alpha → REJECT
+       RESTART_SUBSYSTEM target=alpha → REJECT (L3_ENVELOPE_MISMATCH)
+[PASS] RESTART_SUBSYSTEM beta graceful → REJECT
+       RESTART_SUBSYSTEM target=beta mode=graceful → REJECT
+[PASS] Extra mode slot → REJECT
+       STATUS_QUERY alpha + mode slot → REJECT (L3_ENVELOPE_MISMATCH)
+[PASS] Zero proposals → REJECT
+       Zero proposals → REJECT (NO_PROPOSALS)
+[PASS] Two proposals → REJECT
+       Two proposals → REJECT (AMBIGUOUS_PROPOSALS)
+[PASS] Invalid intent → REJECT
+       Invalid intent → REJECT (INVALID_PROPOSALS)
+[PASS] Extra field in proposal → REJECT
+       Extra field in proposal → REJECT
+[PASS] Demo input via CLI → ACCEPT
+       Demo input via CLI → ACCEPT
+[PASS] Non-demo input via CLI → REJECT
+       Non-demo input via CLI → REJECT
+[PASS] Determinism of ACCEPT gate
+       Authoritative gate deterministic (5 runs)
+[PASS] Determinism of REJECT gate
+       Schema-valid alternative REJECT deterministic (5 runs)
+[PASS] CLI rejects unknown flags
+       CLI rejects unknown flags
+[PASS] CLI requires --input
+       CLI requires --input flag
+
+===========================================================================
+All L-3 single-envelope tests PASSED
