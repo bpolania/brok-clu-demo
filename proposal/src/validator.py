@@ -37,7 +37,7 @@ MAX_ERROR_LENGTH = 256
 VALID_INTENTS = frozenset(["RESTART_SUBSYSTEM", "STOP_SUBSYSTEM", "STATUS_QUERY"])
 VALID_TARGETS = frozenset(["alpha", "beta", "gamma"])
 VALID_MODES = frozenset(["graceful", "immediate"])
-VALID_KINDS = frozenset(["ROUTE_CANDIDATE"])
+VALID_KINDS = frozenset(["ROUTE_CANDIDATE", "STATE_TRANSITION_REQUEST"])  # L-4 adds STATE_TRANSITION_REQUEST
 
 
 def validate_proposal_set(data: dict) -> Tuple[bool, List[str]]:
@@ -163,6 +163,9 @@ def _validate_proposal(proposal: dict, index: int) -> List[str]:
     if kind == "ROUTE_CANDIDATE":
         payload_errors = _validate_route_candidate_payload(payload, prefix)
         errors.extend(payload_errors)
+    elif kind == "STATE_TRANSITION_REQUEST":
+        payload_errors = _validate_state_transition_request_payload(payload, prefix)
+        errors.extend(payload_errors)
 
     return errors
 
@@ -222,6 +225,35 @@ def _validate_route_candidate_payload(payload: dict, prefix: str) -> List[str]:
                 errors.append(f"{prefix}_MODE_NOT_STRING")
             elif mode not in VALID_MODES:
                 errors.append(f"{prefix}_INVALID_MODE:{mode}")
+
+    return errors
+
+
+def _validate_state_transition_request_payload(payload: dict, prefix: str) -> List[str]:
+    """Validate STATE_TRANSITION_REQUEST payload (L-4)."""
+    errors = []
+
+    if not isinstance(payload, dict):
+        return [f"{prefix}_PAYLOAD_NOT_OBJECT"]
+
+    # Check required fields
+    if "event_token" not in payload:
+        errors.append(f"{prefix}_PAYLOAD_MISSING_EVENT_TOKEN")
+        return errors
+
+    # Check no additional properties
+    allowed = {"event_token"}
+    extra = set(payload.keys()) - allowed
+    if extra:
+        errors.append(f"{prefix}_PAYLOAD_UNEXPECTED_FIELDS:{','.join(sorted(extra))}")
+
+    # Validate event_token is a string
+    event_token = payload["event_token"]
+    if not isinstance(event_token, str):
+        errors.append(f"{prefix}_EVENT_TOKEN_NOT_STRING")
+
+    # Note: We don't validate the event_token value here.
+    # The artifact builder's L-4 gate validates against the closed set.
 
     return errors
 

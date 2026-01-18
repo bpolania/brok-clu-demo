@@ -1,0 +1,151 @@
+=== L-4 CLI Surface Evidence ===
+Generated: 2026-01-17
+
+================================================================================
+A) CANONICAL INVOCATION STATEMENT
+================================================================================
+
+Canonical invocation under test: ./brok --input <file>
+
+================================================================================
+B) EVIDENCE THAT ONLY --input IS USER-FACING
+================================================================================
+
+--------------------------------------------------------------------------------
+B.1) CLI Help Output (./brok --help)
+--------------------------------------------------------------------------------
+
+$ ./brok --help
+
+usage: brok [-h] --input INPUT
+
+Brok-CLU Pipeline
+
+options:
+  -h, --help     show this help message and exit
+  --input INPUT  Input file path
+
+Authority model:
+  - Proposals are DERIVED and NON-AUTHORITATIVE
+  - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY
+  - stdout.raw.kv is the ONLY AUTHORITATIVE EXECUTION OUTPUT
+
+Exit codes:
+  0  Success (including REJECT decisions)
+  1  Operational failure
+
+OBSERVATION: Only --input and -h/--help are documented as user-facing options.
+
+--------------------------------------------------------------------------------
+B.2) Missing --input Argument (./brok with no args)
+--------------------------------------------------------------------------------
+
+$ ./brok
+usage: brok [-h] --input INPUT
+brok: error: the following arguments are required: --input
+Exit code: 2
+
+OBSERVATION: The CLI requires --input and fails with exit code 2 if not provided.
+
+--------------------------------------------------------------------------------
+B.3) Forbidden Flag Tests
+--------------------------------------------------------------------------------
+
+Test 1: --run-id (historically internal)
+$ ./brok --run-id test --input inputs/l4/create_payment.txt
+usage: brok [-h] --input INPUT
+brok: error: unrecognized arguments: --run-id test
+Exit code: 2
+
+OBSERVATION: --run-id is REJECTED as unrecognized.
+
+Test 2: --quiet (historically internal)
+$ ./brok --quiet --input inputs/l4/create_payment.txt
+usage: brok [-h] --input INPUT
+brok: error: unrecognized arguments: --quiet
+Exit code: 2
+
+OBSERVATION: --quiet is REJECTED as unrecognized.
+
+Test 3: --repo-root (historically internal)
+$ ./brok --repo-root . --input inputs/l4/create_payment.txt
+usage: brok [-h] --input INPUT
+brok: error: unrecognized arguments: --repo-root .
+Exit code: 2
+
+OBSERVATION: --repo-root is REJECTED as unrecognized.
+
+--------------------------------------------------------------------------------
+B.4) Summary of CLI Surface Verification
+--------------------------------------------------------------------------------
+
+| Flag         | Status      | Evidence                          |
+|--------------|-------------|-----------------------------------|
+| --input      | ACCEPTED    | Required argument, documented     |
+| -h, --help   | ACCEPTED    | Standard help flag, documented    |
+| --run-id     | REJECTED    | "unrecognized arguments" error    |
+| --quiet      | REJECTED    | "unrecognized arguments" error    |
+| --repo-root  | REJECTED    | "unrecognized arguments" error    |
+
+================================================================================
+C) CONFIRM NO OTHER ENTRYPOINTS BECAME PUBLIC
+================================================================================
+
+Repository root listing (ls -la):
+--------------------------------------------------------------------------------
+total 96
+drwxr-xr-x@ 26 bpolania  staff   832 Jan 17 19:24 .
+drwxr-xr-x@ 66 bpolania  staff  2112 Jan 14 11:32 ..
+drwx------@  3 bpolania  staff    96 Jan 17 19:36 .claude
+drwxr-xr-x@ 17 bpolania  staff   544 Jan 17 19:59 .git
+-rw-r--r--@  1 bpolania  staff    66 Jan  3 23:23 .gitattributes
+-rw-r--r--@  1 bpolania  staff   316 Jan 17 19:24 .gitignore
+drwxr-xr-x@  8 bpolania  staff   256 Jan 14 13:46 .idea
+-rw-r--r--@  1 bpolania  staff  3924 Jan 17 19:24 INVARIANTS.md
+-rw-r--r--@  1 bpolania  staff  6793 Jan 17 19:24 README.md
+-rw-r--r--@  1 bpolania  staff  5066 Jan 17 19:24 REFERENCE_ARTIFACT.md
+-rw-r--r--@  1 bpolania  staff  2803 Jan  7 23:26 VERIFY.md
+drwxr-xr-x@  6 bpolania  staff   192 Jan 17 19:24 artifact
+drwxr-xr-x@ 11 bpolania  staff   352 Jan 17 16:15 artifacts
+-rwxr-xr-x@  1 bpolania  staff  2419 Jan 17 19:24 brok
+drwxr-xr-x@  7 bpolania  staff   224 Jan 17 19:24 docs
+drwxr-xr-x@  3 bpolania  staff    96 Jan  3 23:51 examples
+drwxr-xr-x@  4 bpolania  staff   128 Jan 17 19:45 inputs
+drwxr-xr-x@  5 bpolania  staff   160 Jan 17 19:24 m3
+drwxr-xr-x@  4 bpolania  staff   128 Jan 14 09:34 m4
+drwxr-xr-x@  6 bpolania  staff   192 Jan 17 19:24 proposal
+-rwxr-xr-x@  1 bpolania  staff  8528 Jan  5 21:56 run.sh
+drwxr-xr-x@  8 bpolania  staff   256 Jan 17 19:24 scripts
+drwxr-xr-x@ 11 bpolania  staff   352 Jan  7 23:26 semantic
+drwxr-xr-x@  6 bpolania  staff   192 Jan 17 19:37 src
+drwxr-xr-x@  6 bpolania  staff   192 Jan 17 19:42 tests
+drwxr-xr-x@  3 bpolania  staff    96 Jan  6 22:27 vendor
+--------------------------------------------------------------------------------
+
+Executable files at repo root:
+  -rwxr-xr-x@ brok       <- Canonical CLI entrypoint
+  -rwxr-xr-x@ run.sh     <- Legacy/internal script (not user-facing per docs)
+
+Analysis:
+  - "brok" is the canonical CLI entrypoint (./brok --input <file>)
+  - "run.sh" exists but is a legacy/internal script, not the public interface
+  - No other CLI binaries are exposed at repo root
+  - L-4 did NOT introduce any new CLI entrypoints
+
+================================================================================
+D) CONCLUSION
+================================================================================
+
+The public CLI surface remains exactly:
+
+    ./brok --input <file>
+
+Evidence proves:
+1. Only --input is accepted as a user argument (plus -h/--help for documentation)
+2. Historically internal flags (--run-id, --quiet, --repo-root) are REJECTED
+3. No new CLI binaries were introduced by L-4
+4. The canonical invocation is unchanged from pre-L-4 state
+
+================================================================================
+END OF CLI SURFACE EVIDENCE
+================================================================================

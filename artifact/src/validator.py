@@ -42,11 +42,56 @@ MAX_PROPOSALS = 8
 
 # Valid enums
 VALID_DECISIONS = frozenset(["ACCEPT", "REJECT"])
-VALID_ACCEPT_KINDS = frozenset(["ROUTE"])
+VALID_ACCEPT_KINDS = frozenset(["ROUTE", "STATE_TRANSITION"])  # L-4 adds STATE_TRANSITION
 VALID_INTENTS = frozenset(["RESTART_SUBSYSTEM", "STOP_SUBSYSTEM", "STATUS_QUERY"])
 VALID_TARGETS = frozenset(["alpha", "beta", "gamma"])
 VALID_MODES = frozenset(["graceful", "immediate"])
-VALID_REASON_CODES = frozenset(["NO_PROPOSALS", "AMBIGUOUS_PROPOSALS", "INVALID_PROPOSALS"])
+
+# REJECT reason codes (M-2 base + L-4 additions)
+VALID_REASON_CODES = frozenset([
+    # M-2 base reason codes
+    "NO_PROPOSALS",
+    "AMBIGUOUS_PROPOSALS",
+    "INVALID_PROPOSALS",
+    # L-4 state machine reason codes
+    "INVALID_EVENT_TOKEN",
+    "ILLEGAL_TRANSITION",
+    "INVALID_CURRENT_STATE",
+])
+
+# L-4 State Machine Valid States (frozen set)
+L4_VALID_STATES = frozenset([
+    "CREATED",
+    "PAYMENT_PENDING",
+    "PAYMENT_FAILED",
+    "PAID",
+    "FRAUD_REVIEW",
+    "INVENTORY_RESERVED",
+    "PICKING",
+    "PACKED",
+    "SHIPPED",
+    "IN_TRANSIT",
+    "DELIVERED",
+    "CANCELLED",
+])
+
+# L-4 Valid Event Tokens (frozen set)
+L4_VALID_EVENT_TOKENS = frozenset([
+    "create_payment",
+    "payment_succeeded",
+    "payment_failed",
+    "retry_payment",
+    "flag_fraud",
+    "approve_fraud",
+    "reject_fraud",
+    "reserve_inventory",
+    "start_picking",
+    "pack_order",
+    "ship_order",
+    "mark_in_transit",
+    "confirm_delivery",
+    "cancel_order",
+])
 
 # Patterns
 RUN_ID_PATTERN = re.compile(r'^[A-Za-z0-9._-]+$')
@@ -183,35 +228,60 @@ def _validate_accept_payload(payload: dict) -> List[str]:
     if not isinstance(payload, dict):
         return ["ACCEPT_PAYLOAD_NOT_OBJECT"]
 
-    # Check required fields
+    # Check required field: kind
     if "kind" not in payload:
         errors.append("ACCEPT_PAYLOAD_MISSING_KIND")
-    if "route" not in payload:
-        errors.append("ACCEPT_PAYLOAD_MISSING_ROUTE")
-
-    if errors:
         return errors
-
-    # Check no additional properties
-    allowed = {"kind", "route"}
-    extra = set(payload.keys()) - allowed
-    if extra:
-        errors.append(f"ACCEPT_PAYLOAD_UNEXPECTED_FIELDS:{','.join(sorted(extra))}")
 
     # Validate kind
     kind = payload["kind"]
     if not isinstance(kind, str):
         errors.append("ACCEPT_PAYLOAD_KIND_NOT_STRING")
+        return errors
     elif kind not in VALID_ACCEPT_KINDS:
         errors.append(f"ACCEPT_PAYLOAD_INVALID_KIND:{kind}")
+        return errors
 
-    # Validate route
-    route = payload["route"]
-    if not isinstance(route, dict):
-        errors.append("ROUTE_NOT_OBJECT")
-    else:
-        route_errors = _validate_route(route)
-        errors.extend(route_errors)
+    # Branch validation based on kind
+    if kind == "ROUTE":
+        # L-3 ROUTE payload
+        if "route" not in payload:
+            errors.append("ACCEPT_PAYLOAD_MISSING_ROUTE")
+            return errors
+
+        # Check no additional properties
+        allowed = {"kind", "route"}
+        extra = set(payload.keys()) - allowed
+        if extra:
+            errors.append(f"ACCEPT_PAYLOAD_UNEXPECTED_FIELDS:{','.join(sorted(extra))}")
+
+        # Validate route
+        route = payload["route"]
+        if not isinstance(route, dict):
+            errors.append("ROUTE_NOT_OBJECT")
+        else:
+            route_errors = _validate_route(route)
+            errors.extend(route_errors)
+
+    elif kind == "STATE_TRANSITION":
+        # L-4 STATE_TRANSITION payload
+        if "transition" not in payload:
+            errors.append("ACCEPT_PAYLOAD_MISSING_TRANSITION")
+            return errors
+
+        # Check no additional properties
+        allowed = {"kind", "transition"}
+        extra = set(payload.keys()) - allowed
+        if extra:
+            errors.append(f"ACCEPT_PAYLOAD_UNEXPECTED_FIELDS:{','.join(sorted(extra))}")
+
+        # Validate transition
+        transition = payload["transition"]
+        if not isinstance(transition, dict):
+            errors.append("TRANSITION_NOT_OBJECT")
+        else:
+            transition_errors = _validate_transition(transition)
+            errors.extend(transition_errors)
 
     return errors
 
@@ -256,6 +326,61 @@ def _validate_route(route: dict) -> List[str]:
             errors.append("ROUTE_MODE_NOT_STRING")
         elif mode not in VALID_MODES:
             errors.append(f"ROUTE_INVALID_MODE:{mode}")
+
+    return errors
+
+
+def _validate_transition(transition: dict) -> List[str]:
+    """Validate L-4 state transition object."""
+    errors = []
+
+    # Check required fields
+    required = ["order_id", "previous_state", "event", "current_state", "terminal"]
+    for field in required:
+        if field not in transition:
+            errors.append(f"TRANSITION_MISSING_{field.upper()}")
+
+    if errors:
+        return errors
+
+    # Check no additional properties
+    allowed = {"order_id", "previous_state", "event", "current_state", "terminal"}
+    extra = set(transition.keys()) - allowed
+    if extra:
+        errors.append(f"TRANSITION_UNEXPECTED_FIELDS:{','.join(sorted(extra))}")
+
+    # Validate order_id
+    order_id = transition["order_id"]
+    if not isinstance(order_id, str):
+        errors.append("TRANSITION_ORDER_ID_NOT_STRING")
+    elif order_id != "demo-order-1":
+        errors.append(f"TRANSITION_INVALID_ORDER_ID:{order_id}")
+
+    # Validate previous_state
+    prev_state = transition["previous_state"]
+    if not isinstance(prev_state, str):
+        errors.append("TRANSITION_PREVIOUS_STATE_NOT_STRING")
+    elif prev_state not in L4_VALID_STATES:
+        errors.append(f"TRANSITION_INVALID_PREVIOUS_STATE:{prev_state}")
+
+    # Validate event
+    event = transition["event"]
+    if not isinstance(event, str):
+        errors.append("TRANSITION_EVENT_NOT_STRING")
+    elif event not in L4_VALID_EVENT_TOKENS:
+        errors.append(f"TRANSITION_INVALID_EVENT:{event}")
+
+    # Validate current_state
+    curr_state = transition["current_state"]
+    if not isinstance(curr_state, str):
+        errors.append("TRANSITION_CURRENT_STATE_NOT_STRING")
+    elif curr_state not in L4_VALID_STATES:
+        errors.append(f"TRANSITION_INVALID_CURRENT_STATE:{curr_state}")
+
+    # Validate terminal
+    terminal = transition["terminal"]
+    if not isinstance(terminal, bool):
+        errors.append("TRANSITION_TERMINAL_NOT_BOOL")
 
     return errors
 

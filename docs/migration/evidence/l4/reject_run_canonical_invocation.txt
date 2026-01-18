@@ -1,0 +1,186 @@
+=== L-4 REJECT Run - Canonical Invocation Evidence ===
+Generated: 2026-01-17
+
+================================================================================
+A) ENVIRONMENT AND COMMIT CONTEXT
+================================================================================
+
+Git HEAD hash: daf44dafa0d29be4baeb1423688cf2258b5424ae
+
+Git status:
+  ## phase-l4-order-state-demo
+   M artifact/src/builder.py
+   M artifact/src/validator.py
+   M m3/src/gateway.py
+   M proposal/src/validator.py
+   M src/artifact_layer/llm_engine.py
+  ?? docs/migration/PHASE_L_4_CLOSURE_REPORT.md
+  ?? docs/migration/PHASE_L_4_SCOPE_LOCK.md
+  ?? docs/migration/evidence/l4/
+  ?? inputs/l4/
+  ?? src/l4_state_machine/
+  ?? tests/l4/
+
+Note: L-4 implementation is complete but not yet committed to main.
+Branch is phase-l4-order-state-demo with uncommitted L-4 changes.
+
+================================================================================
+B) EXACT COMMAND EXECUTED (CANONICAL)
+================================================================================
+
+  ./brok --input inputs/l4/illegal_payment_succeeded.txt
+
+================================================================================
+C) CAPTURED STDOUT AND STDERR
+================================================================================
+
+stdout (verbatim):
+--------------------------------------------------------------------------------
+################################################################################
+#                          BROK-CLU PIPELINE                                   #
+#                                                                              #
+#  Pipeline: INPUT -> PROPOSAL -> ARTIFACT -> EXECUTION                        #
+#                                                                              #
+#  Authority model:                                                            #
+#    - Proposals are DERIVED and NON-AUTHORITATIVE                             #
+#    - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY                         #
+#    - Execution output (stdout.raw.kv) is the ONLY AUTHORITATIVE OUTPUT       #
+#                                                                              #
+################################################################################
+
+
+================================================================================
+[1/3] PROPOSAL (DERIVED, NON-AUTHORITATIVE)
+================================================================================
+
+  Proposal count: 1
+  Source: artifacts/proposals/run_2f84f1707774/proposal_set.json
+  Status: SINGLE PROPOSAL
+  Proposal kind: STATE_TRANSITION_REQUEST
+
+NOTE: Proposals are DERIVED and NON-AUTHORITATIVE. They do not constitute
+      decisions. The artifact layer makes the authoritative wrapper decision.
+
+
+================================================================================
+[2/3] ARTIFACT (AUTHORITATIVE WRAPPER DECISION)
+================================================================================
+
+  Decision: REJECT
+  Ruleset: M2_RULESET_V1
+  Proposal count: 1
+  Artifact path: artifacts/artifacts/run_2f84f1707774/artifact.json
+  Status: EXECUTION NOT PERMITTED
+  Reason: ILLEGAL_TRANSITION
+
+NOTE: Artifacts record DECISIONS, not execution outcomes. The artifact decides
+      whether execution proceeds. Execution truth is in stdout.raw.kv only.
+
+
+================================================================================
+[3/3] EXECUTION (FROZEN, AUTHORITATIVE OUTPUT = stdout.raw.kv)
+================================================================================
+
+  Status: NOT INVOKED
+  Reason: Artifact decision is REJECT
+  (No PoC v2 execution occurred - this is expected behavior)
+
+NOTE: stdout.raw.kv is the ONLY authoritative execution output. All other
+      outputs are derived summaries. Do not treat derived outputs as guarantees.
+
+
+========================================================================
+[DERIVED] M-4 Observability Summary
+========================================================================
+  Run ID: m4_1819203d3ab11b57
+  Manifest: artifacts/run/m4_1819203d3ab11b57/manifest.json
+  Trace: artifacts/run/m4_1819203d3ab11b57/trace.jsonl
+
+  NOTE: This summary is DERIVED and non-authoritative.
+        Only stdout.raw.kv is authoritative for runtime truth.
+========================================================================
+
+
+################################################################################
+#  END OF PIPELINE                                                             #
+#                                                                              #
+#  Remember: stdout.raw.kv is authoritative. Everything else is derived.       #
+################################################################################
+
+decision=REJECT reason_code=ILLEGAL_TRANSITION
+--------------------------------------------------------------------------------
+
+stderr: (empty - no stderr output)
+
+Exit code: 0
+
+================================================================================
+D) RUN DIRECTORY AND PROOF OF NON-EXECUTION
+================================================================================
+
+M4 Manifest Directory:
+  /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_1819203d3ab11b57/
+
+Directory listing (ls -la):
+  total 16
+  drwxr-xr-x@    4 bpolania  staff    128 Jan 17 19:46 .
+  drwxr-xr-x@ 1040 bpolania  staff  33280 Jan 17 19:48 ..
+  -rw-r--r--@    1 bpolania  staff   1372 Jan 17 19:59 manifest.json
+  -rw-r--r--@    1 bpolania  staff   1044 Jan 17 19:59 trace.jsonl
+
+L4 Execution Run Directory Check:
+  Searched for: l4_run_*2f84f1707774*
+  Result: No L4 run directory found for REJECT run (expected)
+
+stdout.raw.kv is ABSENT:
+  - No L4 execution directory was created
+  - No stdout.raw.kv file was produced
+  - This is correct behavior for REJECT decisions
+
+Artifact showing REJECT decision:
+  Path: artifacts/artifacts/run_2f84f1707774/artifact.json
+  Contents:
+  {
+    "artifact_version": "artifact_v1",
+    "construction": {
+      "proposal_count": 1,
+      "ruleset_id": "M2_RULESET_V1",
+      "selected_proposal_index": null
+    },
+    "decision": "REJECT",
+    "input_ref": "inputs/l4/illegal_payment_succeeded.txt",
+    "proposal_set_ref": "artifacts/proposals/run_2f84f1707774/proposal_set.json",
+    "reject_payload": {
+      "notes": [
+        "L4_REJECT:ILLEGAL_TRANSITION"
+      ],
+      "reason_code": "ILLEGAL_TRANSITION"
+    },
+    "run_id": "run_2f84f1707774"
+  }
+
+================================================================================
+E) EXPLANATION OF REJECT REASON
+================================================================================
+
+Input: "payment succeeded"
+Event Token: payment_succeeded
+Current State: CREATED (initial state)
+Requested Transition: CREATED -> PAID (via payment_succeeded)
+
+REJECT Reason: ILLEGAL_TRANSITION
+  - The event token "payment_succeeded" is a valid token (not INVALID_EVENT_TOKEN)
+  - However, payment_succeeded is only legal from PAYMENT_PENDING state
+  - The transition CREATED -> PAID via payment_succeeded is NOT in the frozen
+    transition table
+
+Legal transitions from CREATED:
+  - create_payment -> PAYMENT_PENDING
+  - cancel_order -> CANCELLED
+
+Therefore the artifact layer correctly REJECTED with ILLEGAL_TRANSITION,
+and no execution occurred.
+
+================================================================================
+END OF REJECT RUN EVIDENCE
+================================================================================

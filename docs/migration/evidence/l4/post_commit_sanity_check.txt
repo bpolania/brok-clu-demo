@@ -1,0 +1,153 @@
+=== L-4 Post-Commit Sanity Check Evidence ===
+Generated: 2026-01-17
+
+================================================================================
+COMMIT HASH (HEAD)
+================================================================================
+
+44e752a781187c122e806c5c21082239c931b2ce
+
+================================================================================
+GIT STATUS (must be clean)
+================================================================================
+
+## phase-l4-order-state-demo
+
+(Working tree is clean - no modified or untracked files)
+
+================================================================================
+CLI HELP OUTPUT (./brok --help)
+================================================================================
+
+usage: brok [-h] --input INPUT
+
+Brok-CLU Pipeline
+
+options:
+  -h, --help     show this help message and exit
+  --input INPUT  Input file path
+
+Authority model:
+  - Proposals are DERIVED and NON-AUTHORITATIVE
+  - Artifacts hold WRAPPER-LEVEL DECISION AUTHORITY
+  - stdout.raw.kv is the ONLY AUTHORITATIVE EXECUTION OUTPUT
+
+Exit codes:
+  0  Success (including REJECT decisions)
+  1  Operational failure
+
+================================================================================
+CANONICAL RUN: ACCEPT
+================================================================================
+
+Command: ./brok --input inputs/l4/create_payment.txt
+
+Output (final line):
+  decision=ACCEPT executed=true
+
+Run directory:
+  /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_071c64b5f425
+
+Manifest path:
+  artifacts/run/m4_b16943a8ca0f29f1/manifest.json
+
+stdout.raw.kv present: YES
+  Path: artifacts/run/l4_run_run_071c64b5f425/stdout.raw.kv
+  Contents:
+    order_id=demo-order-1
+    previous_state=CREATED
+    event=create_payment
+    current_state=PAYMENT_PENDING
+    terminal=false
+
+================================================================================
+CANONICAL RUN: REJECT
+================================================================================
+
+Command: ./brok --input inputs/l4/illegal_payment_succeeded.txt
+
+Output (final line):
+  decision=REJECT reason_code=ILLEGAL_TRANSITION
+
+Run directory:
+  (No L4 execution directory - execution skipped)
+
+Manifest path:
+  artifacts/run/m4_1819203d3ab11b57/manifest.json
+
+stdout.raw.kv present: NO (expected for REJECT)
+
+================================================================================
+MANIFEST EXCERPTS: AUTHORITATIVE OUTPUTS
+================================================================================
+
+ACCEPT Run Manifest (authority_boundary section):
+{
+  "authoritative_outputs": [
+    "stdout.raw.kv"
+  ],
+  "derived_outputs": [
+    "artifacts/artifacts/run_071c64b5f425/artifact.json",
+    "artifacts/proposals/run_071c64b5f425/proposal_set.json"
+  ]
+}
+
+ACCEPT stdout.raw.kv hash (from manifest):
+  382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+REJECT Run Manifest (authority_boundary section):
+{
+  "authoritative_outputs": [],
+  "derived_outputs": [
+    "artifacts/artifacts/run_2f84f1707774/artifact.json",
+    "artifacts/proposals/run_2f84f1707774/proposal_set.json"
+  ]
+}
+
+REJECT execution status:
+  {"executed": false}
+
+================================================================================
+PROOF SUMMARY
+================================================================================
+
+| Run Type | authoritative_outputs | stdout.raw.kv hash | execution.executed |
+|----------|----------------------|-------------------|-------------------|
+| ACCEPT   | ["stdout.raw.kv"]    | 382dc31811e509... | true              |
+| REJECT   | []                   | (absent)          | false             |
+
+This proves:
+- ACCEPT includes stdout.raw.kv in authoritative outputs with hash
+- REJECT has empty authoritative_outputs
+- REJECT does not produce stdout.raw.kv
+
+================================================================================
+TEST COMMANDS AND RESULTS
+================================================================================
+
+Command: python3 tests/l4/test_l4_state_machine.py
+Result: 126/126 passed - All L-4 state machine tests PASSED
+
+Command: python3 tests/l3/test_l3_acceptance.py
+Result: All L-3 single-envelope tests PASSED
+
+Command: python3 artifact/tests/test_artifact_builder.py
+Result: 13/13 OK
+
+Command: python3 m3/tests/test_invariants.py
+Result: 29/29 OK (1 skipped)
+
+================================================================================
+CONCLUSION
+================================================================================
+
+All post-commit sanity checks PASS:
+- Working tree is clean after closure commit
+- CLI surface unchanged (./brok --input <file>)
+- ACCEPT run produces stdout.raw.kv with correct hash in manifest
+- REJECT run produces empty authoritative_outputs, no stdout.raw.kv
+- All test suites pass
+
+================================================================================
+END OF POST-COMMIT SANITY CHECK EVIDENCE
+================================================================================
