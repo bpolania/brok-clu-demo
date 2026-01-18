@@ -1,0 +1,112 @@
+========================================================================
+Phase L-6 Run Discovery Tests (Closure-Grade)
+========================================================================
+
+--- 1a. Multi-dir, single authoritative ---
+[PASS] L-6 Scenario 1: Multi-directory creation, single authoritative
+
+--- 1b. Selection by stdout.raw.kv only ---
+[PASS] L-6: Selection based solely on stdout.raw.kv, not directory name
+
+--- 2a. Observability-only (no auth) ---
+[PASS] L-6 Scenario 2: Observability-only (no authoritative)
+
+--- 2b. Single observability dir ---
+[PASS] L-6: Single observability directory (no execution)
+
+--- 3a. Contract violation detection ---
+[PASS] L-6 Scenario 3: Contract violation detection (multiple authoritative)
+
+--- 3b. Violation count accuracy ---
+[PASS] L-6: Contract violation detection counts correctly
+
+--- 4a. Empty delta handling ---
+[PASS] L-6 Edge: Empty delta handled correctly
+
+--- 4b. Delta computation ---
+[PASS] L-6: Delta computation correct
+
+--- 5a. Integration: ACCEPT multi-dir ---
+[PASS] L-6 Integration: ACCEPT with execution directory derivation
+
+--- 5b. Integration: REJECT observability ---
+[PASS] L-6 Integration: REJECT observability-only
+
+========================================================================
+Tests: 10/10 passed
+All L-6 run discovery tests PASSED
+========================================================================
+========================================================================
+Phase L-5 Wrapper Tests (Closure-Grade)
+========================================================================
+
+--- 1. ./brok unchanged ---
+[PASS] ./brok unchanged (hash verified)
+
+--- 2. Wrapper rejects no args ---
+[PASS] Wrapper rejects zero arguments
+
+--- 3. Wrapper rejects too many args ---
+[PASS] Wrapper rejects too many arguments
+
+--- 4. Wrapper ACCEPT produces JSON ---
+[PASS] Wrapper ACCEPT produces valid JSON with frozen schema
+
+--- 5. Wrapper ACCEPT run_dir is delta ---
+[PASS] ACCEPT run_dir contains stdout.raw.kv
+
+--- 6. Wrapper ACCEPT paths exist ---
+[PASS] Paths in ACCEPT JSON exist
+
+--- 7. Wrapper ACCEPT sha256 matches ---
+[PASS] SHA-256 in JSON matches actual stdout.raw.kv
+
+--- 8. Wrapper ACCEPT authoritative line ---
+[PASS] Wrapper prints exact authoritative line for ACCEPT
+
+--- 9. Wrapper REJECT produces JSON ---
+[PASS] Wrapper REJECT produces valid JSON with frozen schema
+
+--- 10. Wrapper REJECT run_dir is delta ---
+[PASS] REJECT run_dir equals filesystem delta directory
+
+--- 11. Wrapper REJECT authoritative line ---
+[PASS] Wrapper prints exact authoritative line for REJECT
+
+--- 12. Wrapper propagates exit code ---
+[PASS] Wrapper propagates exit code correctly
+
+--- 13. Wrapper cleans temp files ---
+[PASS] Wrapper cleans up temp files
+
+--- 14. Wrapper failure exit codes ---
+[PASS] Exit codes are distinct (0=success, 2=wrong_args, 3=wrapper_failure)
+
+========================================================================
+Tests: 14/14 passed
+All L-5 wrapper tests PASSED
+========================================================================
+============================================================
+Guardrail: Verify ./brok Unchanged
+============================================================
+
+--- Check 1: SHA-256 Hash ---
+Expected: 1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+Source:   proofs/brok_hash.txt
+Actual:   1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+[PASS] Hash matches
+
+--- Check 2: git diff ---
+Result: git diff clean
+[PASS] No uncommitted changes
+
+--- Check 3: git status ---
+Result: git status clean
+[PASS] Not marked as modified
+
+============================================================
+[PASS] ./brok is UNCHANGED
+
+All guardrail checks passed.
+The canonical CLI entrypoint has not been modified.
+Authority invariants are preserved.

@@ -2,12 +2,14 @@
 """
 Phase L-5 Wrapper Tests (Closure-Grade)
 
+Updated for L-6 Path A compliance: delta-only authoritative selection.
+
 Verifies:
 1. ./brok remains unchanged (byte-level integrity)
 2. Wrapper rejects wrong arg counts without invoking ./brok
 3. Wrapper uses filesystem delta for run identification (no internal coupling)
 4. Wrapper invocation produces correct JSON + authoritative output line
-5. Paths in JSON exist, sha256 matches
+5. Paths in JSON exist when not null, sha256 matches when present
 6. Wrapper exit code equals underlying ./brok exit code
 7. Wrapper failure scenarios handled correctly
 
@@ -98,7 +100,11 @@ def test_wrapper_rejects_too_many_args():
 
 
 def test_wrapper_accept_produces_json():
-    """Wrapper ACCEPT run produces valid JSON with frozen schema."""
+    """Wrapper ACCEPT run produces valid JSON with frozen schema.
+
+    Path A: authoritative fields may be null if execution dir not in delta.
+    L-6B: When ACCEPT + null authoritative, warning must be printed to stderr.
+    """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
     # Should succeed
@@ -120,46 +126,51 @@ def test_wrapper_accept_produces_json():
         assert field in summary, f"Frozen schema requires '{field}'"
     assert len(summary) == 4, f"Frozen schema has exactly 4 fields, got {len(summary)}: {list(summary.keys())}"
 
-    # For ACCEPT, all fields should have non-null values
+    # For ACCEPT: decision must be ACCEPT, run_dir must be non-null
+    # Path A: authoritative fields MAY be null (if execution dir not in delta)
     assert summary["decision"] == "ACCEPT", f"Expected ACCEPT, got {summary['decision']}"
     assert summary["run_dir"] is not None, "ACCEPT must have non-null run_dir"
-    assert summary["authoritative_stdout_raw_kv"] is not None, "ACCEPT must have non-null authoritative_stdout_raw_kv"
-    assert summary["authoritative_stdout_raw_kv_sha256"] is not None, "ACCEPT must have non-null sha256"
+
+    # L-6B: Verify warning behavior for ACCEPT + null authoritative
+    if summary["authoritative_stdout_raw_kv"] is None:
+        # Exact warning text required (two lines to stderr)
+        assert "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)." in stderr, (
+            "ACCEPT with null authoritative must print exact warning line 1 to stderr"
+        )
+        assert "Note: Under Path A, brok-run does not search outside the delta set for authoritative output." in stderr, (
+            "ACCEPT with null authoritative must print exact warning line 2 to stderr"
+        )
+    else:
+        # If authoritative is present, no warning expected
+        assert stderr == "", f"No warning expected when authoritative is present, got: {stderr}"
 
     print("[PASS] Wrapper ACCEPT produces valid JSON with frozen schema")
 
 
-def test_wrapper_accept_run_dir_is_delta():
-    """ACCEPT run_dir equals newly created directory from filesystem delta."""
-    # Snapshot before
-    before = set(os.listdir(_RUN_ROOT)) if os.path.isdir(_RUN_ROOT) else set()
+def test_wrapper_accept_run_dir_exists():
+    """ACCEPT run_dir points to an existing directory.
 
+    Path A: run_dir is the observability dir if no authoritative in delta.
+    """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
-    # Snapshot after
-    after = set(os.listdir(_RUN_ROOT))
-
-    # Compute delta
-    new_dirs = after - before
-    assert len(new_dirs) == 1, f"Expected exactly 1 new directory, got {len(new_dirs)}"
-
-    # Parse JSON and verify run_dir matches delta
+    # Parse JSON
     lines = stdout.strip().split('\n')
     summary = json.loads(lines[0])
 
-    new_dir_name = new_dirs.pop()
-    expected_run_dir = os.path.join(_RUN_ROOT, new_dir_name)
+    # run_dir must exist
+    run_dir = summary["run_dir"]
+    assert run_dir is not None, "ACCEPT should have non-null run_dir"
+    assert os.path.isdir(run_dir), f"run_dir should exist: {run_dir}"
 
-    assert summary["run_dir"] == expected_run_dir, (
-        f"run_dir should equal delta directory. "
-        f"Expected: {expected_run_dir}, Got: {summary['run_dir']}"
-    )
-
-    print("[PASS] ACCEPT run_dir equals filesystem delta directory")
+    print("[PASS] ACCEPT run_dir exists")
 
 
-def test_wrapper_accept_paths_exist():
-    """Paths in ACCEPT JSON actually exist."""
+def test_wrapper_accept_paths_valid():
+    """Paths in ACCEPT JSON are valid when not null.
+
+    Path A: authoritative paths may be null if execution dir not in delta.
+    """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
     lines = stdout.strip().split('\n')
@@ -169,15 +180,19 @@ def test_wrapper_accept_paths_exist():
     run_dir = summary.get("run_dir")
     assert run_dir and os.path.isdir(run_dir), f"run_dir does not exist: {run_dir}"
 
-    # Check stdout.raw.kv exists
+    # Check authoritative path - only verify if not null
     stdout_path = summary.get("authoritative_stdout_raw_kv")
-    assert stdout_path and os.path.isfile(stdout_path), f"stdout.raw.kv does not exist: {stdout_path}"
+    if stdout_path is not None:
+        assert os.path.isfile(stdout_path), f"authoritative path does not exist: {stdout_path}"
 
-    print("[PASS] Paths in ACCEPT JSON exist")
+    print("[PASS] Paths in ACCEPT JSON are valid")
 
 
-def test_wrapper_accept_sha256_matches():
-    """SHA-256 in JSON matches actual file content."""
+def test_wrapper_accept_sha256_valid():
+    """SHA-256 in JSON matches actual file content when present.
+
+    Path A: sha256 may be null if execution dir not in delta.
+    """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
     lines = stdout.strip().split('\n')
@@ -186,16 +201,24 @@ def test_wrapper_accept_sha256_matches():
     stdout_path = summary.get("authoritative_stdout_raw_kv")
     claimed_hash = summary.get("authoritative_stdout_raw_kv_sha256")
 
-    actual_hash = sha256_file(stdout_path)
-    assert actual_hash == claimed_hash, (
-        f"SHA-256 mismatch! Claimed: {claimed_hash}, Actual: {actual_hash}"
-    )
-
-    print("[PASS] SHA-256 in JSON matches actual stdout.raw.kv")
+    # Only verify sha256 if authoritative path is present
+    if stdout_path is not None and claimed_hash is not None:
+        actual_hash = sha256_file(stdout_path)
+        assert actual_hash == claimed_hash, (
+            f"SHA-256 mismatch! Claimed: {claimed_hash}, Actual: {actual_hash}"
+        )
+        print("[PASS] SHA-256 in JSON matches actual stdout.raw.kv")
+    else:
+        # Path A: authoritative not in delta
+        print("[PASS] SHA-256 check skipped (authoritative not in delta)")
 
 
 def test_wrapper_accept_authoritative_line():
-    """Wrapper line 2 is exact authoritative output path for ACCEPT."""
+    """Wrapper line 2 matches authoritative output path.
+
+    Path A: line 2 is "Authoritative output: NONE" if not in delta.
+    L-6B: When authoritative is NONE for ACCEPT, warning must be on stderr.
+    """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
     lines = stdout.strip().split('\n')
@@ -205,13 +228,23 @@ def test_wrapper_accept_authoritative_line():
     summary = json.loads(lines[0])
     expected_path = summary["authoritative_stdout_raw_kv"]
 
-    # Line 2 must be exact format
-    expected_line = f"Authoritative output: {expected_path}"
+    # Line 2 format depends on whether authoritative is present
+    if expected_path is not None:
+        expected_line = f"Authoritative output: {expected_path}"
+    else:
+        expected_line = "Authoritative output: NONE"
+
     assert lines[1] == expected_line, (
         f"Line 2 mismatch. Expected: {expected_line}, Got: {lines[1]}"
     )
 
-    print("[PASS] Wrapper prints exact authoritative line for ACCEPT")
+    # L-6B: Verify warning appears when ACCEPT has null authoritative
+    if expected_path is None:
+        assert "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)." in stderr, (
+            "ACCEPT with NONE authoritative must have exact warning on stderr"
+        )
+
+    print("[PASS] Wrapper prints correct authoritative line for ACCEPT")
 
 
 def test_wrapper_reject_produces_json():
@@ -233,9 +266,9 @@ def test_wrapper_reject_produces_json():
         assert field in summary, f"Frozen schema requires '{field}'"
     assert len(summary) == 4, f"Frozen schema has exactly 4 fields, got {len(summary)}: {list(summary.keys())}"
 
-    # For REJECT: decision is REJECT, run_dir is non-null (m4_* dir), authoritative fields are null
+    # For REJECT: decision is REJECT, run_dir is non-null, authoritative fields are null
     assert summary["decision"] == "REJECT", f"Expected REJECT, got {summary['decision']}"
-    assert summary["run_dir"] is not None, "REJECT must have non-null run_dir (m4_* directory)"
+    assert summary["run_dir"] is not None, "REJECT must have non-null run_dir"
     assert summary["authoritative_stdout_raw_kv"] is None, "REJECT must have null authoritative_stdout_raw_kv"
     assert summary["authoritative_stdout_raw_kv_sha256"] is None, "REJECT must have null sha256"
 
@@ -252,23 +285,22 @@ def test_wrapper_reject_run_dir_is_delta():
     # Snapshot after
     after = set(os.listdir(_RUN_ROOT))
 
-    # Compute delta
+    # Compute delta - may have 1+ new dirs
     new_dirs = after - before
-    assert len(new_dirs) == 1, f"Expected exactly 1 new directory, got {len(new_dirs)}"
+    assert len(new_dirs) >= 1, f"Expected at least 1 new directory, got {len(new_dirs)}"
 
-    # Parse JSON and verify run_dir matches delta
+    # Parse JSON
     lines = stdout.strip().split('\n')
     summary = json.loads(lines[0])
 
-    new_dir_name = new_dirs.pop()
-    expected_run_dir = os.path.join(_RUN_ROOT, new_dir_name)
-
-    assert summary["run_dir"] == expected_run_dir, (
-        f"run_dir should equal delta directory. "
-        f"Expected: {expected_run_dir}, Got: {summary['run_dir']}"
+    # run_dir should be one of the delta directories
+    run_dir = summary["run_dir"]
+    run_dir_name = os.path.basename(run_dir)
+    assert run_dir_name in new_dirs, (
+        f"run_dir should be in delta. run_dir: {run_dir_name}, delta: {new_dirs}"
     )
 
-    print("[PASS] REJECT run_dir equals filesystem delta directory")
+    print("[PASS] REJECT run_dir is in filesystem delta")
 
 
 def test_wrapper_reject_authoritative_line():
@@ -320,32 +352,24 @@ def test_wrapper_cleans_temp_file():
     print("[PASS] Wrapper cleans up temp files")
 
 
-def test_wrapper_failure_ambiguous_delta():
-    """Wrapper failure when delta is ambiguous (simulated by pre-creating dir)."""
-    import tempfile
-    import shutil
-
-    # Create a temporary directory in run root to cause delta > 1
-    # We'll create it, run the wrapper (which creates another), then check behavior
-    # Actually, this is hard to test without race conditions.
-    # Instead, we verify the exit code for wrapper failure is distinct.
-
-    # For now, just verify the exit codes are distinct
+def test_wrapper_failure_exit_codes():
+    """Wrapper exit codes are distinct for different failure modes."""
+    # Normal invocation - should exit 0
     stdout_ok, stderr_ok, exit_ok = run_wrapper(["create payment"])
-    stdout_bad, stderr_bad, exit_bad = run_wrapper([])
-
     assert exit_ok == 0, "Normal invocation should exit 0"
+
+    # Wrong args - should exit 2
+    stdout_bad, stderr_bad, exit_bad = run_wrapper([])
     assert exit_bad == EXIT_WRONG_ARGS, f"Wrong args should exit {EXIT_WRONG_ARGS}"
 
-    # Wrapper failure exit code is defined but hard to trigger deterministically
-    # Document the expected behavior instead
+    # Wrapper failure exit code (3) is reserved for contract violations
     print("[PASS] Exit codes are distinct (0=success, 2=wrong_args, 3=wrapper_failure)")
 
 
 def main():
     """Run all L-5 wrapper tests."""
     print("=" * 72)
-    print("Phase L-5 Wrapper Tests (Closure-Grade)")
+    print("Phase L-5 Wrapper Tests (Path A Compatible)")
     print("=" * 72)
     print()
 
@@ -354,16 +378,16 @@ def main():
         ("2. Wrapper rejects no args", test_wrapper_rejects_no_args),
         ("3. Wrapper rejects too many args", test_wrapper_rejects_too_many_args),
         ("4. Wrapper ACCEPT produces JSON", test_wrapper_accept_produces_json),
-        ("5. Wrapper ACCEPT run_dir is delta", test_wrapper_accept_run_dir_is_delta),
-        ("6. Wrapper ACCEPT paths exist", test_wrapper_accept_paths_exist),
-        ("7. Wrapper ACCEPT sha256 matches", test_wrapper_accept_sha256_matches),
+        ("5. Wrapper ACCEPT run_dir exists", test_wrapper_accept_run_dir_exists),
+        ("6. Wrapper ACCEPT paths valid", test_wrapper_accept_paths_valid),
+        ("7. Wrapper ACCEPT sha256 valid", test_wrapper_accept_sha256_valid),
         ("8. Wrapper ACCEPT authoritative line", test_wrapper_accept_authoritative_line),
         ("9. Wrapper REJECT produces JSON", test_wrapper_reject_produces_json),
         ("10. Wrapper REJECT run_dir is delta", test_wrapper_reject_run_dir_is_delta),
         ("11. Wrapper REJECT authoritative line", test_wrapper_reject_authoritative_line),
         ("12. Wrapper propagates exit code", test_wrapper_propagates_exit_code),
         ("13. Wrapper cleans temp files", test_wrapper_cleans_temp_file),
-        ("14. Wrapper failure exit codes", test_wrapper_failure_ambiguous_delta),
+        ("14. Wrapper failure exit codes", test_wrapper_failure_exit_codes),
     ]
 
     passed = 0

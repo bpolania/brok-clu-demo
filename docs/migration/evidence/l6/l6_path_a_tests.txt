@@ -1,0 +1,112 @@
+========================================================================
+Phase L-6 Path A Run Discovery Tests (Delta-Only Selection)
+========================================================================
+
+--- Scenario 1a: Multi-dir, single auth ---
+[PASS] Scenario 1: Multi-dir delta, single authoritative selected
+
+--- Scenario 1b: Selection by file not name ---
+[PASS] Scenario 1: Selection by stdout.raw.kv presence, not name
+
+--- Scenario 2a: No auth in delta ---
+[PASS] Scenario 2: No authoritative in delta, valid state
+
+--- Scenario 2b: Single dir no stdout ---
+[PASS] Scenario 2: Single dir, no stdout.raw.kv, valid state
+
+--- Scenario 3a: Multiple authoritative ---
+[PASS] Scenario 3: Multiple authoritative detected (violation)
+
+--- Scenario 3b: Exact count ---
+[PASS] Scenario 3: Exact count verified (3 authoritative)
+
+--- Edge: Empty delta ---
+[PASS] Edge: Empty delta handled correctly
+
+--- Edge: Delta computation ---
+[PASS] Edge: Delta computation correct
+
+--- Integration: REJECT ---
+[PASS] Integration: REJECT (authoritative=null)
+
+--- Integration: ACCEPT delta ---
+[PASS] Integration: ACCEPT (execution dir not in delta, authoritative=null)
+
+========================================================================
+Tests: 10/10 passed
+All L-6 Path A tests PASSED
+========================================================================
+========================================================================
+Phase L-5 Wrapper Tests (Path A Compatible)
+========================================================================
+
+--- 1. ./brok unchanged ---
+[PASS] ./brok unchanged (hash verified)
+
+--- 2. Wrapper rejects no args ---
+[PASS] Wrapper rejects zero arguments
+
+--- 3. Wrapper rejects too many args ---
+[PASS] Wrapper rejects too many arguments
+
+--- 4. Wrapper ACCEPT produces JSON ---
+[PASS] Wrapper ACCEPT produces valid JSON with frozen schema
+
+--- 5. Wrapper ACCEPT run_dir exists ---
+[PASS] ACCEPT run_dir exists
+
+--- 6. Wrapper ACCEPT paths valid ---
+[PASS] Paths in ACCEPT JSON are valid
+
+--- 7. Wrapper ACCEPT sha256 valid ---
+[PASS] SHA-256 check skipped (authoritative not in delta)
+
+--- 8. Wrapper ACCEPT authoritative line ---
+[PASS] Wrapper prints correct authoritative line for ACCEPT
+
+--- 9. Wrapper REJECT produces JSON ---
+[PASS] Wrapper REJECT produces valid JSON with frozen schema
+
+--- 10. Wrapper REJECT run_dir is delta ---
+[PASS] REJECT run_dir is in filesystem delta
+
+--- 11. Wrapper REJECT authoritative line ---
+[PASS] Wrapper prints exact authoritative line for REJECT
+
+--- 12. Wrapper propagates exit code ---
+[PASS] Wrapper propagates exit code correctly
+
+--- 13. Wrapper cleans temp files ---
+[PASS] Wrapper cleans up temp files
+
+--- 14. Wrapper failure exit codes ---
+[PASS] Exit codes are distinct (0=success, 2=wrong_args, 3=wrapper_failure)
+
+========================================================================
+Tests: 14/14 passed
+All L-5 wrapper tests PASSED
+========================================================================
+============================================================
+Guardrail: Verify ./brok Unchanged
+============================================================
+
+--- Check 1: SHA-256 Hash ---
+Expected: 1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+Source:   proofs/brok_hash.txt
+Actual:   1dc5ddfd2cd95f2b7c9836bd17014f2713e4aae1fead556144fd74ec4b996944
+[PASS] Hash matches
+
+--- Check 2: git diff ---
+Result: git diff clean
+[PASS] No uncommitted changes
+
+--- Check 3: git status ---
+Result: git status clean
+[PASS] Not marked as modified
+
+============================================================
+[PASS] ./brok is UNCHANGED
+
+All guardrail checks passed.
+The canonical CLI entrypoint has not been modified.
+Authority invariants are preserved.
