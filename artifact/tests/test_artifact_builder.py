@@ -36,7 +36,7 @@ validate_artifact = _artifact_validator.validate_artifact
 
 
 class TestArtifactBuilderDecisions(unittest.TestCase):
-    """Test artifact builder decision rules (M2_RULESET_V1)."""
+    """Test artifact builder decision rules (M2_RULESET_V1 + L-3 envelope gate)."""
 
     def _make_proposal_set(self, proposals, errors=None):
         """Helper to create a valid ProposalSet structure."""
@@ -50,7 +50,7 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
         return result
 
     def _make_proposal(self, intent="RESTART_SUBSYSTEM", target="alpha", mode="graceful"):
-        """Helper to create a valid proposal."""
+        """Helper to create a valid proposal (non-L3 envelope)."""
         return {
             "kind": "ROUTE_CANDIDATE",
             "payload": {
@@ -58,6 +58,18 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
                 "slots": {
                     "target": target,
                     "mode": mode
+                }
+            }
+        }
+
+    def _make_l3_envelope_proposal(self):
+        """Helper to create the L-3 envelope proposal (the only one that ACCEPTs)."""
+        return {
+            "kind": "ROUTE_CANDIDATE",
+            "payload": {
+                "intent": "STATUS_QUERY",
+                "slots": {
+                    "target": "alpha"
                 }
             }
         }
@@ -79,8 +91,9 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
         self.assertIsNone(artifact["construction"]["selected_proposal_index"])
 
     def test_one_proposal_accepts(self):
-        """ProposalSet with exactly one proposal must produce ACCEPT."""
-        proposal = self._make_proposal()
+        """ProposalSet with exactly one L-3 envelope proposal must produce ACCEPT."""
+        # Under L-3, only the exact envelope (STATUS_QUERY alpha, no mode) can ACCEPT
+        proposal = self._make_l3_envelope_proposal()
         proposal_set = self._make_proposal_set([proposal])
 
         artifact = build_artifact(
@@ -93,11 +106,29 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
         self.assertEqual(artifact["decision"], "ACCEPT")
         self.assertIn("accept_payload", artifact)
         self.assertEqual(artifact["accept_payload"]["kind"], "ROUTE")
-        self.assertEqual(artifact["accept_payload"]["route"]["intent"], "RESTART_SUBSYSTEM")
+        self.assertEqual(artifact["accept_payload"]["route"]["intent"], "STATUS_QUERY")
         self.assertEqual(artifact["accept_payload"]["route"]["target"], "alpha")
-        self.assertEqual(artifact["accept_payload"]["route"]["mode"], "graceful")
+        self.assertNotIn("mode", artifact["accept_payload"]["route"])
         self.assertEqual(artifact["construction"]["proposal_count"], 1)
         self.assertEqual(artifact["construction"]["selected_proposal_index"], 0)
+
+    def test_non_l3_envelope_proposal_rejects(self):
+        """ProposalSet with one proposal outside L-3 envelope must produce REJECT."""
+        # RESTART_SUBSYSTEM is schema-valid but not the L-3 envelope
+        proposal = self._make_proposal()
+        proposal_set = self._make_proposal_set([proposal])
+
+        artifact = build_artifact(
+            proposal_set=proposal_set,
+            run_id="test_run",
+            input_ref="test/input.txt",
+            proposal_set_ref="artifacts/proposals/test_run/proposal_set.json"
+        )
+
+        self.assertEqual(artifact["decision"], "REJECT")
+        self.assertIn("reject_payload", artifact)
+        notes = artifact["reject_payload"].get("notes", [])
+        self.assertIn("L3_ENVELOPE_MISMATCH", notes)
 
     def test_multiple_proposals_rejects_with_ambiguous(self):
         """ProposalSet with 2+ proposals must produce REJECT with AMBIGUOUS_PROPOSALS."""
@@ -147,8 +178,8 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
         self.assertEqual(artifact["decision"], "REJECT")
         self.assertEqual(artifact["reject_payload"]["reason_code"], "INVALID_PROPOSALS")
 
-    def test_status_query_without_mode(self):
-        """STATUS_QUERY proposals may omit mode."""
+    def test_status_query_beta_rejects_under_l3(self):
+        """STATUS_QUERY on beta is schema-valid but REJECTS under L-3 envelope gate."""
         proposal = {
             "kind": "ROUTE_CANDIDATE",
             "payload": {
@@ -167,10 +198,10 @@ class TestArtifactBuilderDecisions(unittest.TestCase):
             proposal_set_ref="artifacts/proposals/test_run/proposal_set.json"
         )
 
-        self.assertEqual(artifact["decision"], "ACCEPT")
-        self.assertEqual(artifact["accept_payload"]["route"]["intent"], "STATUS_QUERY")
-        self.assertEqual(artifact["accept_payload"]["route"]["target"], "beta")
-        self.assertNotIn("mode", artifact["accept_payload"]["route"])
+        # Under L-3, only STATUS_QUERY alpha (no mode) can ACCEPT
+        self.assertEqual(artifact["decision"], "REJECT")
+        notes = artifact["reject_payload"].get("notes", [])
+        self.assertIn("L3_ENVELOPE_MISMATCH", notes)
 
 
 class TestArtifactBuilderValidation(unittest.TestCase):
@@ -183,18 +214,19 @@ class TestArtifactBuilderValidation(unittest.TestCase):
             "proposals": proposals
         }
 
-    def _make_proposal(self):
+    def _make_l3_envelope_proposal(self):
+        """The L-3 envelope proposal is the only one that ACCEPTs."""
         return {
             "kind": "ROUTE_CANDIDATE",
             "payload": {
-                "intent": "RESTART_SUBSYSTEM",
-                "slots": {"target": "alpha", "mode": "graceful"}
+                "intent": "STATUS_QUERY",
+                "slots": {"target": "alpha"}
             }
         }
 
     def test_accept_artifact_validates(self):
         """ACCEPT artifacts must pass validation."""
-        proposal_set = self._make_proposal_set([self._make_proposal()])
+        proposal_set = self._make_proposal_set([self._make_l3_envelope_proposal()])
 
         artifact = build_artifact(
             proposal_set=proposal_set,
@@ -243,18 +275,19 @@ class TestArtifactBuilderSchema(unittest.TestCase):
             "proposals": proposals
         }
 
-    def _make_proposal(self):
+    def _make_l3_envelope_proposal(self):
+        """The L-3 envelope proposal is the only one that ACCEPTs."""
         return {
             "kind": "ROUTE_CANDIDATE",
             "payload": {
-                "intent": "RESTART_SUBSYSTEM",
-                "slots": {"target": "alpha", "mode": "graceful"}
+                "intent": "STATUS_QUERY",
+                "slots": {"target": "alpha"}
             }
         }
 
     def test_artifact_has_required_fields(self):
         """All artifacts must have required fields."""
-        proposal_set = self._make_proposal_set([self._make_proposal()])
+        proposal_set = self._make_proposal_set([self._make_l3_envelope_proposal()])
 
         artifact = build_artifact(
             proposal_set=proposal_set,
@@ -272,7 +305,7 @@ class TestArtifactBuilderSchema(unittest.TestCase):
 
     def test_accept_has_no_reject_payload(self):
         """ACCEPT artifacts must not have reject_payload."""
-        proposal_set = self._make_proposal_set([self._make_proposal()])
+        proposal_set = self._make_proposal_set([self._make_l3_envelope_proposal()])
 
         artifact = build_artifact(
             proposal_set=proposal_set,

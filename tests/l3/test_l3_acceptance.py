@@ -56,7 +56,7 @@ L3_ENVELOPE = {
 }
 
 
-def _make_proposal_set(proposals, input_raw="status alpha\n"):
+def _make_proposal_set(proposals, input_raw="status of alpha subsystem\n"):
     """Create a ProposalSet dict."""
     return {
         "schema_version": "m1.0",
@@ -333,6 +333,11 @@ def test_extra_field_in_proposal_rejects():
 # =============================================================================
 # Test Category 4: CLI Integration
 # =============================================================================
+EXAMPLES_DIR = os.path.join(REPO_ROOT, 'examples', 'inputs')
+ACCEPT_STATUS_ALPHA = os.path.join(EXAMPLES_DIR, 'accept_status_alpha.txt')
+ACCEPT_STATUS_BETA = os.path.join(EXAMPLES_DIR, 'accept_status_beta.txt')
+
+
 def test_demo_input_via_cli_accepts():
     """
     CLI TEST: The demo input file produces ACCEPT via CLI.
@@ -354,6 +359,44 @@ def test_demo_input_via_cli_accepts():
         return False, f"Expected executed=true in output"
 
     return True, "Demo input via CLI → ACCEPT"
+
+
+def test_example_accept_status_alpha_accepts():
+    """
+    CLI TEST: The examples/inputs/accept_status_alpha.txt produces ACCEPT.
+    This is the canonical demo trigger file for users.
+    """
+    if not os.path.exists(ACCEPT_STATUS_ALPHA):
+        return False, f"Example file not found: {ACCEPT_STATUS_ALPHA}"
+
+    result = _run_cli(ACCEPT_STATUS_ALPHA)
+
+    if result.returncode != 0:
+        return False, f"Expected exit code 0, got {result.returncode}"
+
+    if 'decision=ACCEPT' not in result.stdout:
+        return False, f"Expected ACCEPT, got: {result.stdout[-200:]}"
+
+    if 'executed=true' not in result.stdout:
+        return False, f"Expected executed=true in output"
+
+    return True, "examples/inputs/accept_status_alpha.txt → ACCEPT"
+
+
+def test_example_accept_status_beta_rejects():
+    """
+    CLI TEST: The examples/inputs/accept_status_beta.txt produces REJECT under L-3.
+    This file contains "status of beta" which is NOT the demo trigger.
+    """
+    if not os.path.exists(ACCEPT_STATUS_BETA):
+        return False, f"Example file not found: {ACCEPT_STATUS_BETA}"
+
+    result = _run_cli(ACCEPT_STATUS_BETA)
+
+    if 'decision=REJECT' not in result.stdout:
+        return False, f"Expected REJECT for status beta, got: {result.stdout[-200:]}"
+
+    return True, "examples/inputs/accept_status_beta.txt → REJECT"
 
 
 def test_non_demo_input_via_cli_rejects():
@@ -485,6 +528,8 @@ def main():
 
         # CLI integration
         ("Demo input via CLI → ACCEPT", test_demo_input_via_cli_accepts),
+        ("Example accept_status_alpha.txt → ACCEPT", test_example_accept_status_alpha_accepts),
+        ("Example accept_status_beta.txt → REJECT", test_example_accept_status_beta_rejects),
         ("Non-demo input via CLI → REJECT", test_non_demo_input_via_cli_rejects),
 
         # Determinism

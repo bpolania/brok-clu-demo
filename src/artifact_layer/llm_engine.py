@@ -10,9 +10,9 @@ services, API keys, or network access. It uses OS randomness to produce
 variable proposals across runs while maintaining the same contract.
 
 Phase L-3 Extension - Controlled Acceptance Demonstration:
-As a PROPOSAL GENERATOR CONVENIENCE, this engine produces the L-3 demo envelope
-proposal when input matches the demo file. For all other inputs, it produces
-unmapped proposals that fail validation.
+This engine produces the L-3 demo envelope proposal when input matches the
+canonical demo trigger. For all other inputs, it produces unmapped proposals
+that fail validation.
 
 IMPORTANT: This engine is NON-AUTHORITATIVE.
 
@@ -37,25 +37,32 @@ for non-demo inputs:
 - Intents: UNMAPPED_INTENT_* (not in valid set)
 - Targets: unmapped_target_* (not in valid set)
 
-These unmapped proposals fail validation → REJECT (INVALID_PROPOSALS).
+These unmapped proposals fail validation -> REJECT (INVALID_PROPOSALS).
 
 Nondeterminism source: OS randomness via secrets module (cryptographically secure).
 """
 
 import json
+import re
 import secrets
 
 # Schema version must match proposal layer
 SCHEMA_VERSION = "m1.0"
 
 # =============================================================================
-# Phase L-3: Demo Envelope (Proposal Generator Convenience)
+# Phase L-3: Demo Trigger Definition
 # =============================================================================
-# Demo input file: inputs/l3_accept_demo.txt
-# Content: "status alpha\n" (exactly 13 bytes)
-# SHA256: 86347beb4d214b9a72e918e3a95c57b7bada3537e0eb9e1246f658aeefbc88ff
+# Canonical demo trigger: "status of alpha subsystem"
 #
-# This engine produces the L3_DEMO_ENVELOPE when input matches the demo file.
+# Matching rules (case-insensitive, whitespace-tolerant):
+# - Must contain "status" followed by "alpha" (with optional words between)
+# - Specifically matches patterns like:
+#   - "status of alpha subsystem"
+#   - "status of alpha"
+#   - "STATUS OF ALPHA SUBSYSTEM"
+#   - "  status   of   alpha  " (extra whitespace)
+#
+# This engine produces the L3_DEMO_ENVELOPE when input matches the demo trigger.
 # This is a PROPOSAL GENERATOR CONVENIENCE, not an authoritative gate.
 #
 # The AUTHORITATIVE L-3 envelope gate is in artifact/src/builder.py.
@@ -67,7 +74,13 @@ SCHEMA_VERSION = "m1.0"
 # Schema-valid alternatives are REJECTED by the authoritative gate.
 # =============================================================================
 
-L3_CANONICAL_INPUT = b"status alpha\n"
+# Pattern for the demo trigger (case-insensitive, whitespace-tolerant)
+# Matches: "status" + optional words + "alpha"
+# Examples: "status of alpha subsystem", "status alpha", "STATUS OF ALPHA"
+_DEMO_TRIGGER_PATTERN = re.compile(
+    r'^\s*status\s+(?:of\s+)?alpha(?:\s+subsystem)?\s*$',
+    re.IGNORECASE
+)
 
 L3_DEMO_ENVELOPE = {
     "kind": "ROUTE_CANDIDATE",
@@ -119,17 +132,25 @@ def _generate_unmapped_proposal() -> dict:
     }
 
 
-def _is_demo_input(raw_input_bytes: bytes) -> bool:
+def _is_demo_trigger(input_text: str) -> bool:
     """
-    Check if input bytes match the L-3 demo input.
+    Check if input text matches the L-3 demo trigger.
 
     This is a PROPOSAL GENERATOR CONVENIENCE check, not an authoritative gate.
-    It controls whether the engine emits a valid proposal (demo input) or
+    It controls whether the engine emits a valid proposal (demo trigger) or
     an unmapped proposal (all other inputs).
 
-    This is a byte-identical comparison. Any difference results in False.
+    The demo trigger is "status of alpha subsystem" (case-insensitive,
+    whitespace-tolerant). Close alternatives like "status of beta" do NOT match.
+
+    Args:
+        input_text: Decoded UTF-8 input string
+
+    Returns:
+        True if input matches the demo trigger pattern.
+        False otherwise.
     """
-    return raw_input_bytes == L3_CANONICAL_INPUT
+    return bool(_DEMO_TRIGGER_PATTERN.match(input_text))
 
 
 def llm_engine(raw_input_bytes: bytes) -> bytes:
@@ -140,7 +161,8 @@ def llm_engine(raw_input_bytes: bytes) -> bytes:
     external services. It uses OS randomness to produce variable proposals.
 
     Phase L-3 Demo Behavior:
-    When input matches the L-3 demo file, the engine produces a valid proposal.
+    When input matches the demo trigger ("status of alpha subsystem"),
+    the engine produces a valid L-3 envelope proposal.
     For all other inputs, it produces unmapped proposals that fail validation.
 
     IMPORTANT: This engine is NON-AUTHORITATIVE. The authoritative decision
@@ -166,17 +188,17 @@ def llm_engine(raw_input_bytes: bytes) -> bytes:
         try:
             input_text = raw_input_bytes.decode('utf-8')
         except UnicodeDecodeError:
-            # Non-UTF8 input: return empty proposal set → REJECT (NO_PROPOSALS)
+            # Non-UTF8 input: return empty proposal set -> REJECT (NO_PROPOSALS)
             return _make_proposal_set_bytes("", [])
 
-        # Empty input: return empty proposal set → REJECT (NO_PROPOSALS)
+        # Empty input: return empty proposal set -> REJECT (NO_PROPOSALS)
         if not input_text or input_text.isspace():
             return _make_proposal_set_bytes(input_text, [])
 
-        # Phase L-3: Demo input check (PROPOSAL GENERATOR CONVENIENCE)
+        # Phase L-3: Demo trigger check (PROPOSAL GENERATOR CONVENIENCE)
         # This controls which proposal the engine emits, not the decision
-        if _is_demo_input(raw_input_bytes):
-            # Produce a valid proposal for demo purposes
+        if _is_demo_trigger(input_text):
+            # Produce the L-3 envelope proposal for demo purposes
             return _make_proposal_set_bytes(input_text, [L3_DEMO_ENVELOPE])
 
         # All other inputs: generate unmapped proposal (nondeterministic via nonce)

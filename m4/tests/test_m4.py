@@ -485,7 +485,7 @@ class TestE2EDeterminismCLI(unittest.TestCase):
         self.input_path = os.path.join(self.temp_dir, "e2e_test_input.txt")
         # Fixed content for determinism
         with open(self.input_path, 'w') as f:
-            f.write("restart alpha subsystem gracefully\n")
+            f.write("status of alpha subsystem\n")
 
     def tearDown(self):
         """Clean up temp files."""
@@ -575,7 +575,7 @@ class TestRealOutputValidation(unittest.TestCase):
         cls.temp_dir = tempfile.mkdtemp()
         cls.input_path = os.path.join(cls.temp_dir, "validation_test.txt")
         with open(cls.input_path, 'w') as f:
-            f.write("restart alpha subsystem gracefully\n")
+            f.write("status of alpha subsystem\n")
 
         # Run CLI
         import subprocess
@@ -789,7 +789,7 @@ class TestAuthoritativeOutputsW1(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         input_path = os.path.join(temp_dir, "w1_test.txt")
         with open(input_path, 'w') as f:
-            f.write("restart alpha subsystem gracefully\n")
+            f.write("status of alpha subsystem\n")
 
         try:
             import subprocess
@@ -846,7 +846,7 @@ class TestStdoutRawKvBinaryOnlyRuntime(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         input_path = os.path.join(temp_dir, "w2_binary_test.txt")
         with open(input_path, 'w') as f:
-            f.write("restart alpha subsystem gracefully\n")
+            f.write("status of alpha subsystem\n")
 
         try:
             # Run via subprocess with a wrapper that monitors open() calls

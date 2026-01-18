@@ -162,13 +162,17 @@ The `docs/proofs/` directory contains frozen audit and validation records preser
 
 See `examples/inputs/` for the locked example input set:
 
-| File                        | Expected |
-|-----------------------------|----------|
-| accept_restart_alpha_1.txt  | ACCEPT   |
-| accept_restart_alpha_2.txt  | ACCEPT   |
-| accept_status_beta.txt      | ACCEPT   |
-| reject_grammar_1.txt        | REJECT   |
-| reject_semantic_1.txt       | REJECT   |
+| File                        | Expected | Notes |
+|-----------------------------|----------|-------|
+| accept_status_alpha.txt     | ACCEPT   | L-3 demo trigger: "status of alpha subsystem" |
+| accept_restart_alpha_1.txt  | REJECT   | Not the L-3 demo trigger |
+| accept_restart_alpha_2.txt  | REJECT   | Not the L-3 demo trigger |
+| accept_status_beta.txt      | REJECT   | L-3 rejects: "status of beta" is not the demo trigger |
+| reject_grammar_1.txt        | REJECT   | |
+| reject_semantic_1.txt       | REJECT   | |
+
+**Note:** Under Phase L-3, only the exact demo trigger "status of alpha subsystem"
+(case-insensitive, whitespace-tolerant) produces ACCEPT. All other inputs REJECT.
 
 ---
 
