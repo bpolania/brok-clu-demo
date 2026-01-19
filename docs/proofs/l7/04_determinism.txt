@@ -1,0 +1,26 @@
+================================================================================
+L-7 Evidence: Determinism (identical inputs → identical outputs)
+================================================================================
+
+Command:
+  ./brok-run "create payment" (run twice)
+
+Expected Outcome:
+  Both runs produce identical decision, discovery_status, and authoritative fields
+
+Run 1:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_0530038e817a503d","decision":"ACCEPT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null,"discovery_status":"authoritative_ambiguous"}
+Authoritative output: AMBIGUOUS
+
+Run 2:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_98094ff09bec2498","decision":"ACCEPT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null,"discovery_status":"authoritative_ambiguous"}
+Authoritative output: AMBIGUOUS
+
+=================================================================================
+What This Proves:
+  - Identical inputs produce identical discovery_status
+  - Identical inputs produce identical authoritative_stdout_raw_kv (or both null)
+  - No random/timestamp-dependent behavior
+=================================================================================

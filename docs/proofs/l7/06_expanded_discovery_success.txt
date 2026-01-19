@@ -1,0 +1,51 @@
+================================================================================
+L-7 Evidence: Expanded Discovery → authoritative_found (End-to-End)
+================================================================================
+
+Command:
+  ./brok-run "cancel order"
+
+Precondition:
+  The l4_run directory for this input ALREADY EXISTS before invocation.
+  Therefore, it is NOT in the filesystem delta set.
+  Delta-only discovery will fail (no stdout.raw.kv in delta).
+  Expanded discovery will search ALL stdout.raw.kv files via SHA256 matching.
+
+Key Observation:
+  The stdout.raw.kv for "cancel order" has a UNIQUE hash across all artifacts/run/.
+  SHA256: 3340b28c333b096a473811a8216b80673233918b9ba7a8027fbaa75a7ca9e7e6
+
+Captured Output:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_aeacdd846076f678","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_3e707cb5d43d/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"3340b28c333b096a473811a8216b80673233918b9ba7a8027fbaa75a7ca9e7e6","discovery_status":"authoritative_found"}
+Authoritative output: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_3e707cb5d43d/stdout.raw.kv
+
+=================================================================================
+What This Proves:
+  - L-7 Expanded discovery CAN return authoritative_found (end-to-end)
+  - When delta-only fails (l4_run already exists, not in delta), expanded
+    discovery searches ALL stdout.raw.kv files via SHA256 matching
+  - With exactly ONE matching file, expanded discovery returns UNIQUE outcome
+  - The authoritative_stdout_raw_kv path and SHA256 are both populated
+  - This is the L-7 TARGET SUCCESS CASE (expanded discovery)
+=================================================================================
+
+Key Structural Difference from Delta-Only:
+  - run_dir = m4_* (observability directory, created fresh during this run)
+  - authoritative_stdout_raw_kv = l4_run_* (found via SHA256 match, NOT in delta)
+
+This proves expanded discovery works end-to-end when:
+  1. Decision is ACCEPT
+  2. Delta-only fails (no stdout.raw.kv in newly created directories)
+  3. Manifest contains stdout.raw.kv SHA256
+  4. Exactly ONE stdout.raw.kv under artifacts/run/ matches that SHA256
+
+=================================================================================
+
+Reproducibility:
+  1. Ensure l4_run_run_3e707cb5d43d EXISTS in artifacts/run/ (already exists after
+     running the delta-only test or any previous "cancel order" invocation)
+  2. Run: ./brok-run "cancel order"
+  3. Observe discovery_status=authoritative_found with paths pointing to l4_run_*
+
+=================================================================================

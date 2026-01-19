@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Brok-CLU Wrapper - Derived UX Convenience Layer (Phase L-6)
+Brok-CLU Wrapper - Derived UX Convenience Layer (Phase L-7)
 
 This is an OPTIONAL wrapper around the canonical ./brok CLI.
 It provides a convenience interface for interactive use.
@@ -10,20 +10,27 @@ IMPORTANT - Authority Model:
   - The canonical command remains: ./brok --input <file>
   - stdout.raw.kv is the ONLY authoritative execution output
   - The JSON summary printed by this wrapper is DERIVED
+  - Discovery does not imply execution truth
 
 Usage:
     ./brok-run "create payment"
 
 Output contract (exactly two lines on success):
   Line 1: JSON with frozen schema (all fields always present)
-  Line 2: "Authoritative output: <path>" or "Authoritative output: NONE"
+  Line 2: "Authoritative output: <path>" or "Authoritative output: NONE" or "Authoritative output: AMBIGUOUS"
 
-Run identification method (L-6):
-  Filesystem delta within artifacts/run/ (black-box, no internal coupling)
-  - Snapshot directories before ./brok invocation
-  - Snapshot directories after ./brok invocation
-  - Multiple new directories allowed per invocation
-  - Authority selection: exactly one directory with stdout.raw.kv
+Run identification method (L-7):
+  1. Delta-only discovery (L-6 behavior): Check newly created directories for stdout.raw.kv
+  2. Expanded discovery (L-7): If delta-only fails and decision=ACCEPT:
+     - Read stdout.raw.kv SHA256 from manifest (written by ./brok)
+     - Scan all stdout.raw.kv files under artifacts/run/
+     - Match by SHA256 (deterministic, no timestamps/ordering)
+     - Outcomes: unique (exactly 1 match), none (0 matches), ambiguous (>1 matches)
+
+Locator outcomes (L-7):
+  - "authoritative_found": Unique stdout.raw.kv located (via delta or expanded discovery)
+  - "authoritative_not_found": No stdout.raw.kv could be located
+  - "authoritative_ambiguous": Multiple candidates, wrapper refuses to select
 """
 
 import hashlib
@@ -168,6 +175,132 @@ def _find_decision_from_new_dirs(new_dirs: set, run_root: str = None) -> str | N
     return None
 
 
+# =============================================================================
+# L-7: Locator Outcome Model and Expanded Discovery
+# =============================================================================
+
+# Locator outcome kinds
+LOCATOR_UNIQUE = "unique"
+LOCATOR_NONE = "none"
+LOCATOR_AMBIGUOUS = "ambiguous"
+
+# Discovery status for UX (derived, non-authoritative)
+DISCOVERY_FOUND = "authoritative_found"
+DISCOVERY_NOT_FOUND = "authoritative_not_found"
+DISCOVERY_AMBIGUOUS = "authoritative_ambiguous"
+
+
+def _get_stdout_sha256_from_manifest(manifest: dict) -> str | None:
+    """
+    Extract stdout.raw.kv SHA256 from manifest.
+
+    L-7: This is the stable pointer written by ./brok (not wrapper).
+    Used for deterministic matching in expanded discovery.
+    """
+    artifacts = manifest.get("artifacts", [])
+    for artifact in artifacts:
+        if artifact.get("type") == "stdout.raw.kv":
+            return artifact.get("sha256")
+    return None
+
+
+def _scan_all_stdout_raw_kv(run_root: str = None) -> list:
+    """
+    Scan all stdout.raw.kv files under run root.
+
+    L-7: Returns list of (path, sha256) tuples.
+    Uses sorted() on directory names to ensure deterministic iteration order.
+    Does NOT use timestamps, mtimes, or file ordering from OS.
+    """
+    root = run_root or _RUN_ROOT
+    results = []
+    if not os.path.isdir(root):
+        return results
+
+    # Sort directory names for deterministic iteration (alphabetical, not by time)
+    for dir_name in sorted(os.listdir(root)):
+        dir_path = os.path.join(root, dir_name)
+        if not os.path.isdir(dir_path):
+            continue
+        stdout_path = os.path.join(dir_path, "stdout.raw.kv")
+        if os.path.isfile(stdout_path):
+            try:
+                file_hash = _sha256_file(stdout_path)
+                results.append((stdout_path, file_hash))
+            except (IOError, OSError):
+                # Skip unreadable files
+                pass
+    return results
+
+
+def _find_by_sha256(target_sha256: str, candidates: list) -> list:
+    """
+    Find all candidates matching the target SHA256.
+
+    L-7: Deterministic matching by content hash.
+    Returns list of paths that match.
+    """
+    matches = []
+    for path, file_hash in candidates:
+        if file_hash == target_sha256:
+            matches.append(path)
+    return matches
+
+
+def _expanded_discovery(manifest: dict, run_root: str = None) -> tuple:
+    """
+    L-7 Expanded Discovery: Find authoritative output by SHA256 matching.
+
+    Allowed inputs (governed inspection):
+    - manifest.json from the observability directory (written by ./brok)
+    - All stdout.raw.kv files under artifacts/run/ (read-only scan)
+
+    Forbidden:
+    - Timestamps, mtimes, ctimes, atimes
+    - File ordering from OS (we sort alphabetically)
+    - "Latest", "most recent", or any time-based selection
+    - Heuristics or probabilistic matching
+
+    Returns: (outcome_kind, path_or_none, details_dict)
+    """
+    root = run_root or _RUN_ROOT
+
+    # Step 1: Get target SHA256 from manifest
+    target_sha256 = _get_stdout_sha256_from_manifest(manifest)
+    if target_sha256 is None:
+        return (LOCATOR_NONE, None, {"reason": "no_sha256_in_manifest"})
+
+    # Step 2: Scan all stdout.raw.kv files
+    candidates = _scan_all_stdout_raw_kv(root)
+    if len(candidates) == 0:
+        return (LOCATOR_NONE, None, {"reason": "no_stdout_files_found", "target_sha256": target_sha256})
+
+    # Step 3: Find matches by SHA256
+    matches = _find_by_sha256(target_sha256, candidates)
+
+    # Step 4: Apply L-7 selection rule
+    if len(matches) == 0:
+        return (LOCATOR_NONE, None, {
+            "reason": "no_sha256_match",
+            "target_sha256": target_sha256,
+            "candidates_scanned": len(candidates)
+        })
+    elif len(matches) == 1:
+        return (LOCATOR_UNIQUE, matches[0], {
+            "reason": "unique_sha256_match",
+            "target_sha256": target_sha256,
+            "candidates_scanned": len(candidates)
+        })
+    else:
+        # Multiple matches - AMBIGUOUS (never pick one)
+        return (LOCATOR_AMBIGUOUS, None, {
+            "reason": "multiple_sha256_matches",
+            "target_sha256": target_sha256,
+            "match_count": len(matches),
+            "candidates_scanned": len(candidates)
+        })
+
+
 def main():
     # Wrong argument handling: single usage line to stderr
     if len(sys.argv) != 2:
@@ -223,9 +356,11 @@ def main():
         authoritative_run_dir = None
         authoritative_path = None
         authoritative_hash = None
+        discovery_status = DISCOVERY_NOT_FOUND  # Default
+        locator_details = {}
 
         if len(authoritative_dirs) == 1:
-            # Exactly one authoritative directory in delta - use it
+            # Exactly one authoritative directory in delta - use it (L-6 behavior)
             authoritative_run_dir = authoritative_dirs[0]
             stdout_path, stdout_hash = _get_stdout_raw_kv(authoritative_run_dir)
             if stdout_path is None:
@@ -234,9 +369,8 @@ def main():
                 return _EXIT_WRAPPER_FAILURE
             authoritative_path = stdout_path
             authoritative_hash = stdout_hash
-
-        # L-6 Path A: If 0 authoritative dirs in delta, treat as "no execution occurred"
-        # Do NOT attempt to derive execution directory from manifest or outside delta
+            discovery_status = DISCOVERY_FOUND
+            locator_details = {"method": "delta_only", "reason": "found_in_delta"}
 
         # STEP 6: Find decision from any new directory with manifest
         decision = _find_decision_from_new_dirs(new_dirs)
@@ -246,10 +380,11 @@ def main():
 
         # STEP 7: Determine run_dir for JSON output
         # Use authoritative dir if available, otherwise use observability dir
+        obs_dir = None
         if authoritative_run_dir:
             run_dir = authoritative_run_dir
         else:
-            # No execution - use observability directory
+            # No authoritative in delta - use observability directory
             obs_dir = _find_observability_dir(new_dirs)
             if obs_dir:
                 run_dir = obs_dir
@@ -260,33 +395,50 @@ def main():
                 print("Wrapper failure: no new directories created", file=sys.stderr)
                 return _EXIT_WRAPPER_FAILURE
 
-        # Frozen JSON schema: all four fields always present
+        # L-7: Expanded discovery when delta-only fails and decision=ACCEPT
+        if decision == "ACCEPT" and authoritative_path is None and obs_dir:
+            manifest = _read_manifest(obs_dir)
+            if manifest:
+                outcome_kind, found_path, details = _expanded_discovery(manifest)
+                locator_details = {"method": "expanded", **details}
+
+                if outcome_kind == LOCATOR_UNIQUE:
+                    # Unique match found via SHA256
+                    authoritative_path = found_path
+                    authoritative_hash = _sha256_file(found_path)
+                    discovery_status = DISCOVERY_FOUND
+                elif outcome_kind == LOCATOR_AMBIGUOUS:
+                    # Multiple matches - refuse to select
+                    discovery_status = DISCOVERY_AMBIGUOUS
+                else:
+                    # No match
+                    discovery_status = DISCOVERY_NOT_FOUND
+            else:
+                locator_details = {"method": "expanded", "reason": "no_manifest"}
+                discovery_status = DISCOVERY_NOT_FOUND
+
+        # L-7 JSON schema: all fields always present (extends L-6 schema)
         summary = {
             "run_dir": run_dir,
             "decision": decision,
             "authoritative_stdout_raw_kv": authoritative_path,
             "authoritative_stdout_raw_kv_sha256": authoritative_hash,
+            "discovery_status": discovery_status,
         }
-
-        # L-6B: Explicit warning for ACCEPT + null authoritative (Path A contract boundary)
-        if decision == "ACCEPT" and authoritative_path is None:
-            print(
-                "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery).",
-                file=sys.stderr
-            )
-            print(
-                "Note: Under Path A, brok-run does not search outside the delta set for authoritative output.",
-                file=sys.stderr
-            )
 
         # Output line 1: JSON (frozen schema, single line)
         print(json.dumps(summary, separators=(',', ':')))
 
-        # Output line 2: Authoritative output
-        if authoritative_path:
+        # Output line 2: Authoritative output status
+        if discovery_status == DISCOVERY_FOUND:
             print(f"Authoritative output: {authoritative_path}")
+        elif discovery_status == DISCOVERY_AMBIGUOUS:
+            print("Authoritative output: AMBIGUOUS")
         else:
             print("Authoritative output: NONE")
+
+        # L-7: Disclaimer line (wrapper is non-authoritative, discovery != execution truth)
+        print("Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.", file=sys.stderr)
 
         # Propagate exit code from ./brok
         return result.returncode
