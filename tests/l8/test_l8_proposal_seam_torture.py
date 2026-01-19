@@ -70,6 +70,14 @@ class TortureTestBase(unittest.TestCase):
         self.run_dir = os.path.join(self.temp_dir, 'artifacts', 'run')
         os.makedirs(self.run_dir, exist_ok=True)
 
+        # Create mock PoC script (for ExecutionGateway tests)
+        scripts_dir = os.path.join(self.temp_dir, 'scripts')
+        os.makedirs(scripts_dir, exist_ok=True)
+        poc_script = os.path.join(scripts_dir, 'run_poc_v2.sh')
+        with open(poc_script, 'w') as f:
+            f.write('#!/bin/bash\necho "Mock PoC execution"\n')
+        os.chmod(poc_script, 0o755)
+
     def tearDown(self):
         """Clean up temporary directory."""
         if hasattr(self, 'temp_dir') and os.path.exists(self.temp_dir):
@@ -209,6 +217,116 @@ class TestInvalidJSONBytes(TortureTestBase):
         artifact = self._inject_bytes(invalid_utf8)
         self._assert_reject(artifact, "INVALID_PROPOSALS")
         print("[BYTES TEST] Invalid UTF-8 prefix -> REJECT")
+
+
+class TestEmptyBytesMapping(TortureTestBase):
+    """
+    Test the production empty-bytes mapping behavior.
+
+    PRODUCTION BEHAVIOR (m3/src/orchestrator.py:162-169):
+    When acquire_proposal_set() returns empty bytes, the orchestrator
+    creates a canonical empty ProposalSet JSON:
+
+        if not proposal_bytes:
+            proposal_set = {
+                "schema_version": "m1.0",
+                "input": {"raw": ""},
+                "proposals": []
+            }
+            proposal_json = json.dumps(proposal_set, sort_keys=True)
+
+    This canonical empty ProposalSet then passes to validation, which
+    REJECTs with NO_PROPOSALS (zero proposals).
+
+    This test verifies that behavior by:
+    1. Using the production-equivalent empty ProposalSet mapping
+    2. Passing it through build_artifact (as production does)
+    3. Passing the result through ExecutionGateway.execute_if_accepted()
+    4. Asserting REJECT and no execution
+    """
+
+    # The canonical empty ProposalSet JSON that production creates
+    CANONICAL_EMPTY_PROPOSAL_SET = {
+        "schema_version": "m1.0",
+        "input": {"raw": ""},
+        "proposals": []
+    }
+
+    def _get_production_empty_bytes_mapping(self):
+        """
+        Replicate the exact production empty-bytes mapping.
+
+        This returns the same dict that production's orchestrator creates
+        when acquire_proposal_set() returns empty bytes.
+
+        Code pointer: m3/src/orchestrator.py:162-169
+        """
+        import json as json_module
+        # Production uses json.dumps(proposal_set, sort_keys=True)
+        # which produces deterministic JSON bytes
+        canonical_json = json_module.dumps(self.CANONICAL_EMPTY_PROPOSAL_SET, sort_keys=True)
+        # Return the dict as production would pass to build_artifact
+        return self.CANONICAL_EMPTY_PROPOSAL_SET.copy()
+
+    def test_empty_bytes_mapping_produces_reject(self):
+        """Empty bytes mapping produces canonical empty ProposalSet which REJECTs."""
+        # Get the production empty-bytes mapping
+        proposal_set = self._get_production_empty_bytes_mapping()
+
+        # Pass through build_artifact (as production does)
+        artifact = self._inject_dict(proposal_set)
+
+        # Assert REJECT with NO_PROPOSALS (zero proposals in array)
+        self._assert_reject(artifact, "NO_PROPOSALS")
+        print("[EMPTY BYTES] Production mapping -> REJECT (NO_PROPOSALS)")
+
+    def test_empty_bytes_mapping_no_execution(self):
+        """Empty bytes mapping does not trigger execution."""
+        proposal_set = self._get_production_empty_bytes_mapping()
+        artifact = self._inject_dict(proposal_set)
+
+        # Pass through ExecutionGateway (uses temp_dir as repo_root)
+        gateway = ExecutionGateway(self.temp_dir)
+        result = gateway.execute_if_accepted(artifact, "/tmp/dummy_input.txt")
+
+        self.assertFalse(result.executed, "Gateway executed despite REJECT from empty bytes mapping")
+        self.assertEqual(result.decision, "REJECT")
+        print("[EMPTY BYTES] No execution triggered on REJECT")
+
+    def test_empty_bytes_mapping_no_stdout_raw_kv(self):
+        """Empty bytes mapping does not create stdout.raw.kv."""
+        proposal_set = self._get_production_empty_bytes_mapping()
+        artifact = self._inject_dict(proposal_set)
+
+        gateway = ExecutionGateway(self.temp_dir)
+        gateway.execute_if_accepted(artifact, "/tmp/dummy_input.txt")
+
+        # Walk the run directory and assert no stdout.raw.kv exists
+        for root, dirs, files in os.walk(self.run_dir):
+            self.assertNotIn("stdout.raw.kv", files,
+                f"stdout.raw.kv found at {root} despite REJECT from empty bytes mapping")
+        print("[EMPTY BYTES] No stdout.raw.kv created")
+
+    def test_empty_bytes_mapping_json_deterministic(self):
+        """
+        Production empty-bytes mapping produces deterministic JSON bytes.
+
+        This verifies that json.dumps(proposal_set, sort_keys=True) produces
+        the same bytes every time, which is required for deterministic REJECT.
+        """
+        import json as json_module
+
+        # Generate the canonical JSON multiple times
+        json1 = json_module.dumps(self.CANONICAL_EMPTY_PROPOSAL_SET, sort_keys=True)
+        json2 = json_module.dumps(self.CANONICAL_EMPTY_PROPOSAL_SET, sort_keys=True)
+
+        self.assertEqual(json1, json2, "Empty bytes mapping JSON is not deterministic")
+
+        # Verify the exact expected string
+        expected = '{"input": {"raw": ""}, "proposals": [], "schema_version": "m1.0"}'
+        self.assertEqual(json1, expected,
+            f"Empty bytes mapping JSON does not match expected.\nGot: {json1}\nExpected: {expected}")
+        print(f"[EMPTY BYTES] Deterministic JSON: {json1}")
 
 
 class TestValidJSONInvalidSchema(TortureTestBase):

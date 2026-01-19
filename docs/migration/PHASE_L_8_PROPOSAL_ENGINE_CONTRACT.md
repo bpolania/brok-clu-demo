@@ -132,15 +132,65 @@ The Proposal Engine provides **NO GUARANTEES** for:
 
 | Failure Mode | What Happens |
 |--------------|--------------|
-| Engine returns empty bytes | Artifact layer: REJECT |
-| Engine returns non-UTF-8 bytes | Artifact layer: REJECT |
-| Engine returns invalid JSON | Artifact layer: REJECT |
-| Engine returns valid JSON, invalid schema | Artifact layer: REJECT |
-| Engine returns zero proposals | Artifact layer: REJECT |
-| Engine returns multiple proposals | Artifact layer: REJECT |
-| Engine returns proposal outside L-3/L-4 gates | Artifact layer: REJECT |
+| Engine returns empty bytes | Orchestrator maps to empty ProposalSet → Validator: REJECT (NO_PROPOSALS) |
+| Engine returns non-UTF-8 bytes | JSON decode fails → Orchestrator maps to empty ProposalSet → REJECT |
+| Engine returns invalid JSON | JSON decode fails → Orchestrator maps to empty ProposalSet → REJECT |
+| Engine returns valid JSON, invalid schema | Artifact layer: REJECT (INVALID_PROPOSALS) |
+| Engine returns zero proposals | Artifact layer: REJECT (NO_PROPOSALS) |
+| Engine returns multiple proposals | Artifact layer: REJECT (AMBIGUOUS_PROPOSALS) |
+| Engine returns proposal outside L-3/L-4 gates | Artifact layer: REJECT (L4_* or envelope mismatch) |
 
 **The artifact layer decision is DETERMINISTIC**: identical ProposalSet bytes always produce identical ACCEPT/REJECT decision and identical artifact.
+
+---
+
+## 5a. Empty Proposal Bytes Mapping (Pre-Validation Canonicalization)
+
+**Observed Invariant (Frozen)**: When the Proposal Engine returns empty bytes, the orchestrator produces a canonical empty ProposalSet JSON before validation.
+
+### 5a.1 Production Behavior
+
+The orchestrator (`m3/src/orchestrator.py:162-169`) implements this mapping:
+
+```python
+if not proposal_bytes:
+    proposal_set = {
+        "schema_version": "m1.0",
+        "input": {"raw": ""},
+        "proposals": []
+    }
+    proposal_json = json.dumps(proposal_set, sort_keys=True)
+```
+
+This produces the canonical bytes:
+```
+{"input": {"raw": ""}, "proposals": [], "schema_version": "m1.0"}
+```
+
+### 5a.2 Behavior Clarification
+
+| Scenario | What Happens |
+|----------|--------------|
+| `acquire_proposal_set()` returns `b""` | Orchestrator creates empty ProposalSet JSON |
+| `acquire_proposal_set()` raises exception | Orchestrator catches and creates empty ProposalSet JSON |
+| Empty ProposalSet passes to validator | Validator rejects: NO_PROPOSALS (zero proposals) |
+
+### 5a.3 Authority and Safety
+
+- This mapping is **NOT authority**. It is a safety mechanism in the orchestrator.
+- The mapped ProposalSet still deterministically REJECTs downstream (NO_PROPOSALS).
+- This is **current behavior** as of L-8 and is now **frozen** as part of the seam specification.
+
+### 5a.4 Distinction from Malformed Bytes
+
+| Input Type | Orchestrator Behavior | Reason for REJECT |
+|------------|----------------------|-------------------|
+| Empty bytes `b""` | Creates empty ProposalSet | NO_PROPOSALS (0 proposals) |
+| Non-UTF-8 bytes | Decode exception → empty ProposalSet | NO_PROPOSALS |
+| Invalid JSON (valid UTF-8) | Parse exception → empty ProposalSet | NO_PROPOSALS |
+| Valid JSON, invalid schema | Passes JSON to validator | INVALID_PROPOSALS |
+
+**Evidence**: See `docs/migration/evidence/l8/07_empty_bytes_mapping_proof.txt`
 
 ---
 

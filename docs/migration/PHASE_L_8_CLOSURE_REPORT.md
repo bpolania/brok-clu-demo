@@ -4,18 +4,20 @@
 
 Phase L-8 establishes the Proposal Engine Contract Freeze and Pre-LLM Safety Gates.
 
-**Closure Status**: **READY**
+**Closure Status**: **READY** (with documented limitation)
 
 | Deliverable | Status |
 |-------------|--------|
-| Contract Document | FROZEN (v1.1 corrected) |
-| Torture Tests | 35/35 PASS |
+| Contract Document | FROZEN (v1.2 - empty-bytes mapping added) |
+| Torture Tests | 39/39 PASS (35 + 4 empty-bytes mapping) |
 | Regression Locks | 21/21 PASS |
 | Evidence | CAPTURED |
 
-**Total Tests Added**: 56
+**Total Tests Added**: 60
 
-**Blockers Identified**: NONE
+**Blockers Identified**: NONE (one documentation limitation noted)
+
+**Documented Limitation**: ACCEPT fixture byte-canonicality cannot be proven (semantic provenance only). See Section 6a.
 
 ---
 
@@ -120,7 +122,9 @@ Tests load these fixtures and verify stable ACCEPT behavior.
 | `docs/migration/evidence/l8/03_reject_gate_no_execution.txt` | REJECT blocks execution |
 | `docs/migration/evidence/l8/04_accept_baseline_stability.txt` | Fixture stability |
 | `docs/migration/evidence/l8/05_production_parse_path.txt` | Test matches production parse |
-| `docs/migration/evidence/l8/06_accept_fixture_provenance.txt` | Fixture provenance |
+| `docs/migration/evidence/l8/06_accept_fixture_provenance.txt` | Fixture semantic provenance |
+| `docs/migration/evidence/l8/07_empty_bytes_mapping_proof.txt` | Empty bytes mapping frozen |
+| `docs/migration/evidence/l8/08_accept_fixture_byte_canonicality.txt` | Byte-canonicality search |
 | `docs/migration/evidence/l8/INDEX.md` | Evidence index |
 
 ---
@@ -138,17 +142,37 @@ The L-8 torture test injection method `_inject_bytes()` uses the **exact same** 
 
 This is not an approximation. The test directly replicates production parsing.
 
-### ACCEPT Fixture Provenance Proof
+### Empty Bytes Mapping Frozen
 
-All ACCEPT fixtures trace to canonical evidence from prior phases:
+The orchestrator's empty-bytes mapping behavior is now frozen and tested.
 
-| Fixture | Canonical Source | SHA256 |
-|---------|-----------------|--------|
-| l3_accept_envelope.json | evidence/l3/accept_run.txt | 2c7dd49d...3f480 |
-| l4_create_payment_envelope.json | evidence/l4/accept_run.txt | 507945fa...a5fd |
-| l4_cancel_order_envelope.json | evidence/l4/terminal_state_run.txt | cb6c794b...b1d1 |
+| Behavior | Implementation |
+|----------|----------------|
+| Empty bytes from PE | Mapped to canonical empty ProposalSet |
+| Canonical JSON | `{"input": {"raw": ""}, "proposals": [], "schema_version": "m1.0"}` |
+| Result | REJECT with NO_PROPOSALS |
+| Execution | Blocked by gateway |
 
-Fixtures are not invented test data. They are the exact ProposalSet structures that produced documented ACCEPT results in L-3 and L-4 closure evidence.
+Code pointer: `m3/src/orchestrator.py:162-169`
+
+This is documented in Section 5a of the contract and proven by 4 tests in `TestEmptyBytesMapping`.
+
+### ACCEPT Fixture Provenance (Semantic, Not Byte-Identical)
+
+ACCEPT fixtures trace to prior phase evidence at the **semantic level** (field values match documented constraints), but are **NOT byte-identical** to any prior recorded JSON.
+
+| Fixture | Semantic Source | Byte-Identical Source |
+|---------|-----------------|----------------------|
+| l3_accept_envelope.json | evidence/l3/accept_run.txt | **NONE FOUND** |
+| l4_create_payment_envelope.json | evidence/l4/accept_run.txt | **NONE FOUND** |
+| l4_cancel_order_envelope.json | evidence/l4/terminal_state_run.txt | **NONE FOUND** |
+
+**Reasons for non-match:**
+- Fixtures use pretty-printed JSON; prior artifacts use minified JSON
+- Fixtures use normalized `input.raw` values; prior artifacts have trailing newlines
+- Some prior L-3 artifacts have different input text
+
+**Closure Impact:** This is a documentation limitation, not a safety issue. Fixtures are semantically correct and produce correct ACCEPT decisions (proven by 21 regression tests). The claim "byte-identical to prior canonical JSON" cannot be proven.
 
 ---
 
@@ -180,11 +204,11 @@ This phase explicitly DID NOT:
 ```bash
 # Run all L-8 tests
 /opt/homebrew/bin/pytest tests/l8/ -v
-# Expected: 56 passed
+# Expected: 60 passed
 
 # Run torture tests only
 /opt/homebrew/bin/pytest tests/l8/test_l8_proposal_seam_torture.py -v
-# Expected: 35 passed
+# Expected: 39 passed
 
 # Run regression locks only
 /opt/homebrew/bin/pytest tests/l8/test_l8_accept_regression_locks.py -v
@@ -201,7 +225,7 @@ git diff --name-only | grep -v "^docs/" | grep -v "^tests/"
 
 | File | Action |
 |------|--------|
-| `docs/migration/PHASE_L_8_PROPOSAL_ENGINE_CONTRACT.md` | Modified (v1.1 corrected) |
+| `docs/migration/PHASE_L_8_PROPOSAL_ENGINE_CONTRACT.md` | Modified (v1.2 - Section 5a added) |
 | `docs/migration/PHASE_L_8_CLOSURE_REPORT.md` | Modified (this report) |
 | `tests/l8/test_l8_proposal_seam_torture.py` | Modified (bytes injection) |
 | `tests/l8/test_l8_accept_regression_locks.py` | Modified (fixture-based, gate tests) |

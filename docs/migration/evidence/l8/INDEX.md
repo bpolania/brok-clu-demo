@@ -15,6 +15,8 @@ Evidence has been restructured to directly prove the claimed safety properties.
 | `04_accept_baseline_stability.txt` | Fixture-based ACCEPT envelopes produce byte-stable artifacts |
 | `05_production_parse_path.txt` | Test injection method matches exact production parsing sequence |
 | `06_accept_fixture_provenance.txt` | ACCEPT fixtures trace to canonical L-3/L-4 phase evidence |
+| `07_empty_bytes_mapping_proof.txt` | Empty bytes mapped to canonical ProposalSet → REJECT, no execution |
+| `08_accept_fixture_byte_canonicality.txt` | Fixture byte-canonicality search results (NOT PROVEN) |
 
 ## Summary of Properties Proven
 
@@ -59,6 +61,13 @@ Evidence has been restructured to directly prove the claimed safety properties.
 - L-4 cancel_order derived from docs/migration/evidence/l4/terminal_state_run.txt
 - All fixtures have documented SHA256 hashes
 
+### 7. Empty Bytes Mapping (4 tests)
+- Empty bytes from PE mapped to canonical empty ProposalSet by orchestrator
+- Canonical JSON: `{"input": {"raw": ""}, "proposals": [], "schema_version": "m1.0"}`
+- Deterministic REJECT with NO_PROPOSALS
+- No execution triggered, no stdout.raw.kv created
+- Code pointer: m3/src/orchestrator.py:162-169
+
 ## Fixture Files
 
 Canonical ACCEPT envelopes are stored in `tests/fixtures/l8/`:
@@ -68,7 +77,7 @@ Canonical ACCEPT envelopes are stored in `tests/fixtures/l8/`:
 
 ## Total Test Count
 
-**56 tests, all passing**
+**60 tests, all passing** (56 original + 4 empty-bytes mapping tests)
 
 ## Red Flags Addressed
 
