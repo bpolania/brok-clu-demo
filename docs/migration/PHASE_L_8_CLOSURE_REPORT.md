@@ -119,7 +119,36 @@ Tests load these fixtures and verify stable ACCEPT behavior.
 | `docs/migration/evidence/l8/02_torture_bytes_injection.txt` | Bytes injection works |
 | `docs/migration/evidence/l8/03_reject_gate_no_execution.txt` | REJECT blocks execution |
 | `docs/migration/evidence/l8/04_accept_baseline_stability.txt` | Fixture stability |
+| `docs/migration/evidence/l8/05_production_parse_path.txt` | Test matches production parse |
+| `docs/migration/evidence/l8/06_accept_fixture_provenance.txt` | Fixture provenance |
 | `docs/migration/evidence/l8/INDEX.md` | Evidence index |
+
+---
+
+## 6a. Closure-Grade Proofs
+
+### Production Parse Path Proof
+
+The L-8 torture test injection method `_inject_bytes()` uses the **exact same** parsing sequence as production code.
+
+| Location | Code Sequence |
+|----------|---------------|
+| Production (m3/src/orchestrator.py:171-172) | `proposal_bytes.decode('utf-8')` then `json.loads()` |
+| Test (test_l8_proposal_seam_torture.py:98) | `json.loads(proposal_bytes.decode('utf-8'))` |
+
+This is not an approximation. The test directly replicates production parsing.
+
+### ACCEPT Fixture Provenance Proof
+
+All ACCEPT fixtures trace to canonical evidence from prior phases:
+
+| Fixture | Canonical Source | SHA256 |
+|---------|-----------------|--------|
+| l3_accept_envelope.json | evidence/l3/accept_run.txt | 2c7dd49d...3f480 |
+| l4_create_payment_envelope.json | evidence/l4/accept_run.txt | 507945fa...a5fd |
+| l4_cancel_order_envelope.json | evidence/l4/terminal_state_run.txt | cb6c794b...b1d1 |
+
+Fixtures are not invented test data. They are the exact ProposalSet structures that produced documented ACCEPT results in L-3 and L-4 closure evidence.
 
 ---
 

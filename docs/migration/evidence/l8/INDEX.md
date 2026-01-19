@@ -13,6 +13,8 @@ Evidence has been restructured to directly prove the claimed safety properties.
 | `02_torture_bytes_injection.txt` | Tests inject raw bytes and malformed data; all invalid inputs → REJECT |
 | `03_reject_gate_no_execution.txt` | REJECT artifacts do not trigger execution; no stdout.raw.kv created |
 | `04_accept_baseline_stability.txt` | Fixture-based ACCEPT envelopes produce byte-stable artifacts |
+| `05_production_parse_path.txt` | Test injection method matches exact production parsing sequence |
+| `06_accept_fixture_provenance.txt` | ACCEPT fixtures trace to canonical L-3/L-4 phase evidence |
 
 ## Summary of Properties Proven
 
@@ -44,6 +46,18 @@ Evidence has been restructured to directly prove the claimed safety properties.
 - Fixture-based envelopes produce ACCEPT
 - Artifacts are byte-stable across runs
 - Prior REJECT runs do not affect subsequent ACCEPT (isolation)
+
+### 5. Production Parse Path Proof
+- Test injection method uses exact same parsing sequence as production
+- Production: `proposal_bytes.decode('utf-8')` then `json.loads()`
+- Test: `json.loads(proposal_bytes.decode('utf-8'))`
+- Code pointers: m3/src/orchestrator.py:160-172, tests/l8/test_l8_proposal_seam_torture.py:78-111
+
+### 6. ACCEPT Fixture Provenance
+- L-3 fixture derived from docs/migration/evidence/l3/accept_run.txt
+- L-4 create_payment derived from docs/migration/evidence/l4/accept_run.txt
+- L-4 cancel_order derived from docs/migration/evidence/l4/terminal_state_run.txt
+- All fixtures have documented SHA256 hashes
 
 ## Fixture Files
 
