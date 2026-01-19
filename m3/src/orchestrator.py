@@ -25,6 +25,7 @@ from typing import Dict, Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from m4.src.observability import PipelineObserver
+    from artifact_layer.run_context import RunContext
 
 # Setup paths
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -133,10 +134,17 @@ def get_input_ref(
 def run_proposal_generator(
     input_file: str,
     run_id: str,
-    repo_root: str
+    repo_root: str,
+    run_ctx: "RunContext" = None
 ) -> Tuple[Optional[Dict], str, Optional[str]]:
     """
     Run the proposal generator via acquire_proposal_set seam.
+
+    Args:
+        input_file: Path to input file
+        run_id: Run identifier
+        repo_root: Repository root path
+        run_ctx: Optional RunContext for enforcing single-call invariant
 
     Returns:
         Tuple of (proposal_set, proposal_set_path, error_message)
@@ -157,7 +165,9 @@ def run_proposal_generator(
             sys.path.insert(0, src_path)
         from artifact_layer.seam_provider import acquire_proposal_set
 
-        proposal_bytes = acquire_proposal_set(raw_input_bytes)
+        # Seam returns OpaqueProposalBytes - extract at artifact layer boundary
+        opaque_result = acquire_proposal_set(raw_input_bytes, run_ctx)
+        proposal_bytes = opaque_result.to_bytes()
 
         # Empty bytes -> create empty proposal set for REJECT path
         if not proposal_bytes:
@@ -168,6 +178,7 @@ def run_proposal_generator(
             }
             proposal_json = json.dumps(proposal_set, sort_keys=True)
         else:
+            # Artifact layer boundary: decode and parse opaque bytes here
             proposal_json = proposal_bytes.decode('utf-8')
             proposal_set = json.loads(proposal_json)
 
@@ -270,6 +281,14 @@ def run_pipeline(
     # Initialize M-4 observability (optional, does not affect behavior)
     observer = _get_observer(repo_root)
 
+    # Create run context for Seam S enforcement
+    # Import here to ensure path setup is complete
+    src_path = os.path.join(repo_root, 'src')
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
+    from artifact_layer.run_context import RunContext
+    run_ctx = RunContext()
+
     # Print header
     if verbose:
         print_pipeline_header()
@@ -296,7 +315,7 @@ def run_pipeline(
 
     # === Stage 1: Proposal Generation ===
     proposal_set, proposal_set_path, error = run_proposal_generator(
-        input_file, run_id, repo_root
+        input_file, run_id, repo_root, run_ctx
     )
 
     if error:

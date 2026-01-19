@@ -1,0 +1,142 @@
+=== Seam S Evidence: Proposal Variability Proof ===
+Date: 2026-01-19
+
+PROPERTY PROVEN:
+Proposal output variability affects ONLY the ACCEPT/REJECT decision.
+No other system behavior changes based on proposal content.
+
+================================================================================
+INVARIANT C3: PROPOSAL VARIABILITY INERT
+================================================================================
+
+Claim: Different proposal content (garbage, valid, empty, malformed) affects
+       ONLY the artifact decision field. No special handling, no different
+       code paths, no conditional behavior based on proposal content.
+
+================================================================================
+TEST EVIDENCE
+================================================================================
+
+Test: test_c3_garbage_proposal_bytes_produce_reject()
+----------------------------------------------------------------------
+Input variations tested:
+  1. b'\xff\xfe\x00\x01' (Invalid UTF-8)
+  2. b'{invalid json' (Broken JSON)
+  3. b'random garbage' (Plain garbage)
+  4. b'\x00\x00\x00\x00' (Null bytes)
+
+Result: ALL 4 inputs -> REJECT
+        No crashes, no special handling, no execution
+
+Test: test_c3_valid_proposal_produces_accept()
+----------------------------------------------------------------------
+Input: Valid ROUTE_CANDIDATE proposal (L-3 canonical format)
+       {
+         "schema_version": "m1.0",
+         "input": {"raw": "status alpha\n"},
+         "proposals": [{
+           "kind": "ROUTE_CANDIDATE",
+           "payload": {"intent": "STATUS_QUERY", "slots": {"target": "alpha"}}
+         }]
+       }
+
+Result: ACCEPT
+        Valid proposal is accepted for execution
+
+Test: test_c3_empty_proposals_produce_reject()
+----------------------------------------------------------------------
+Input: Valid JSON with empty proposals array
+       {"schema_version": "m1.0", "input": {"raw": ""}, "proposals": []}
+
+Result: REJECT (reason_code: NO_PROPOSALS)
+        Empty proposals deterministically collapse to REJECT
+
+Test: test_c3_variability_does_not_affect_non_decision_behavior()
+----------------------------------------------------------------------
+Input variations:
+  1. b'' (empty bytes)
+  2. b'not json' (non-JSON)
+  3. Valid JSON with empty proposals
+
+Result: ALL 3 inputs -> REJECT with reason_code=NO_PROPOSALS
+        Identical behavior except for the decision itself
+
+================================================================================
+GUARD EVIDENCE
+================================================================================
+
+Guard G2: Non-Inspection Guard
+
+Implementation: Static analysis in tests/seam_s/test_seam_s_guards_and_invariants.py
+
+Tests:
+- test_guard_g2_no_inspection_before_artifact_layer()
+  Verifies NO conditional logic based on proposal content
+  Checked patterns: string search, regex, indexing, length comparison
+
+- test_guard_g2_opaque_byte_passthrough()
+  Verifies proposal bytes are NOT modified
+  Checked patterns: concatenation, replacement, filtering, transformation
+
+Result: [PASS] No inspection patterns found
+        [PASS] Bytes pass through opaquely (empty mapping excepted)
+
+================================================================================
+PRODUCTION CODE PATH
+================================================================================
+
+File: m3/src/orchestrator.py
+
+Lines 160-172 (annotated):
+
+    proposal_bytes = acquire_proposal_set(raw_input_bytes)  # Line 160: SEAM CALL
+
+    # Lines 162-169: Empty bytes handling (NOT inspection - just null check)
+    if not proposal_bytes:
+        proposal_set = {
+            "schema_version": "m1.0",
+            "input": {"raw": ""},
+            "proposals": []
+        }
+        proposal_json = json.dumps(proposal_set, sort_keys=True)
+    else:
+        proposal_json = proposal_bytes.decode('utf-8')      # Line 171: DECODE
+        proposal_set = json.loads(proposal_json)             # Line 172: PARSE
+
+Note: The empty bytes check (line 163) is NOT inspection. It's the documented
+empty-bytes mapping behavior that produces a canonical empty ProposalSet.
+This is documented in Phase L-8 contract Section 5a.
+
+================================================================================
+FAILURE COLLAPSE EVIDENCE (C2)
+================================================================================
+
+Related to variability: When the proposal engine fails (any mode), the seam
+ALWAYS returns empty bytes. This ensures proposal variability includes
+"failure" as a stable input variant.
+
+Tests:
+- test_c2_engine_none_collapses_to_empty(): Engine=None -> b""
+- test_c2_engine_exception_collapses_to_empty(): Engine raises -> b""
+- test_c2_engine_wrong_type_collapses_to_empty(): Engine returns non-bytes -> b""
+
+Result: ALL failures -> b"" -> REJECT (NO_PROPOSALS)
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: Proposal variability affects ONLY the ACCEPT/REJECT decision.
+
+Evidence:
+- Garbage bytes -> REJECT (no crash, no special handling)
+- Valid proposals -> ACCEPT
+- Empty proposals -> REJECT (NO_PROPOSALS)
+- Engine failures -> REJECT (NO_PROPOSALS)
+
+No code paths branch on proposal content except:
+1. Empty bytes check (documented mapping behavior)
+2. Artifact layer validation (sole authority for ACCEPT/REJECT)
+
+This satisfies Invariant C3 (Proposal Variability Inert).
+

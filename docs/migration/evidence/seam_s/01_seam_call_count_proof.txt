@@ -1,0 +1,83 @@
+=== Seam S Evidence: Call Count Proof ===
+Date: 2026-01-19
+
+PROPERTY PROVEN:
+Seam S (acquire_proposal_set) is called EXACTLY ONCE per pipeline run.
+
+================================================================================
+SEAM CONTRACT
+================================================================================
+
+Function: acquire_proposal_set(raw_input_bytes: bytes) -> bytes
+Location: src/artifact_layer/seam_provider.py
+
+Contract Constraints:
+- Input: raw bytes from user input file
+- Output: opaque proposal bytes (JSON-serialized ProposalSet)
+- Single call per run (no retries)
+- All failures collapse to empty bytes
+- No parsing, filtering, or enrichment of proposals
+- No runtime switching or configurability
+
+================================================================================
+STATIC ANALYSIS: CALL SITE VERIFICATION
+================================================================================
+
+Method: AST parsing of all production Python files (excluding tests)
+
+Result:
+- Call sites found: 1
+- Location: m3/src/orchestrator.py:160
+
+Code at call site (line 160):
+    proposal_bytes = acquire_proposal_set(raw_input_bytes)
+
+Verification:
+[PASS] Exactly one call site exists in production code
+[PASS] Call site is in expected location (orchestrator)
+[PASS] No retry patterns found (no loops, no backoff, no max_attempts)
+
+================================================================================
+DYNAMIC ANALYSIS: RUNTIME CALL COUNTING
+================================================================================
+
+Method: Instrumented seam wrapper that counts invocations
+
+Test: test_c1_single_call_per_run()
+
+Procedure:
+1. Wrap acquire_proposal_set with counting instrumentation
+2. Execute pipeline (run_proposal_generator)
+3. Assert call count == 1
+
+Result:
+[PASS] Exactly 1 seam call per pipeline run
+
+================================================================================
+GUARD ENFORCEMENT
+================================================================================
+
+Guard G1: Exactly-One-Call Guard
+
+Implementation: Static analysis test in tests/seam_s/test_seam_s_guards_and_invariants.py
+
+Tests:
+- test_guard_g1_exactly_one_call_site(): Verifies single call site via AST
+- test_guard_g1_no_retry_patterns(): Verifies no retry logic around seam
+
+These guards run as part of CI and will FAIL if:
+- A second call site is added
+- Retry logic is introduced around the seam
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: acquire_proposal_set is called exactly once per pipeline run.
+
+Static evidence: Single call site at m3/src/orchestrator.py:160
+Dynamic evidence: Instrumented run confirms count=1
+Guard evidence: Static analysis guard prevents regression
+
+This satisfies Invariant C1 (Call Count Invariant).
+

@@ -277,12 +277,13 @@ def test_engine_returns_non_bytes_produces_reject():
 
 def test_seam_level_engine_none():
     """
-    Verify seam-level behavior: get_bound_engine() -> None returns b"".
+    Verify seam-level behavior: get_bound_engine() -> None returns OpaqueProposalBytes(b"").
 
     This is a unit test of the seam itself, separate from downstream assertion.
     """
     from artifact_layer import seam_provider
     from artifact_layer import engine_binding
+    from artifact_layer.opaque_bytes import OpaqueProposalBytes
 
     original = engine_binding.get_bound_engine
 
@@ -292,10 +293,13 @@ def test_seam_level_engine_none():
 
         result = seam_provider.acquire_proposal_set(b"test")
 
-        if result != b"":
-            return False, f"Expected b'', got {result!r}"
+        if not isinstance(result, OpaqueProposalBytes):
+            return False, f"Expected OpaqueProposalBytes, got {type(result)}"
 
-        return True, "Seam returns b'' when engine is None"
+        if result.to_bytes() != b"":
+            return False, f"Expected b'', got {result.to_bytes()!r}"
+
+        return True, "Seam returns OpaqueProposalBytes(b'') when engine is None"
 
     finally:
         engine_binding.get_bound_engine = original
@@ -304,12 +308,13 @@ def test_seam_level_engine_none():
 
 def test_seam_level_engine_raises():
     """
-    Verify seam-level behavior: engine raises exception returns b"".
+    Verify seam-level behavior: engine raises exception returns OpaqueProposalBytes(b"").
 
     This is a unit test of the seam itself, separate from downstream assertion.
     """
     from artifact_layer import seam_provider
     from artifact_layer import engine_binding
+    from artifact_layer.opaque_bytes import OpaqueProposalBytes
 
     original = engine_binding.get_bound_engine
 
@@ -322,10 +327,13 @@ def test_seam_level_engine_raises():
 
         result = seam_provider.acquire_proposal_set(b"test")
 
-        if result != b"":
-            return False, f"Expected b'', got {result!r}"
+        if not isinstance(result, OpaqueProposalBytes):
+            return False, f"Expected OpaqueProposalBytes, got {type(result)}"
 
-        return True, "Seam returns b'' when engine raises"
+        if result.to_bytes() != b"":
+            return False, f"Expected b'', got {result.to_bytes()!r}"
+
+        return True, "Seam returns OpaqueProposalBytes(b'') when engine raises"
 
     finally:
         engine_binding.get_bound_engine = original
@@ -334,12 +342,13 @@ def test_seam_level_engine_raises():
 
 def test_seam_level_engine_non_bytes():
     """
-    Verify seam-level behavior: engine returns non-bytes returns b"".
+    Verify seam-level behavior: engine returns non-bytes returns OpaqueProposalBytes(b"").
 
     This is a unit test of the seam itself, separate from downstream assertion.
     """
     from artifact_layer import seam_provider
     from artifact_layer import engine_binding
+    from artifact_layer.opaque_bytes import OpaqueProposalBytes
 
     original = engine_binding.get_bound_engine
 
@@ -352,10 +361,13 @@ def test_seam_level_engine_non_bytes():
 
         result = seam_provider.acquire_proposal_set(b"test")
 
-        if result != b"":
-            return False, f"Expected b'', got {result!r}"
+        if not isinstance(result, OpaqueProposalBytes):
+            return False, f"Expected OpaqueProposalBytes, got {type(result)}"
 
-        return True, "Seam returns b'' when engine returns non-bytes"
+        if result.to_bytes() != b"":
+            return False, f"Expected b'', got {result.to_bytes()!r}"
+
+        return True, "Seam returns OpaqueProposalBytes(b'') when engine returns non-bytes"
 
     finally:
         engine_binding.get_bound_engine = original

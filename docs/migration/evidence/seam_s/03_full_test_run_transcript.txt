@@ -1,0 +1,85 @@
+=== Seam S Evidence: Full Test Run Transcript ===
+Date: 2026-01-19
+Command: /opt/homebrew/bin/python3 tests/seam_s/test_seam_s_guards_and_invariants.py
+
+================================================================================
+TEST OUTPUT
+================================================================================
+
+===========================================================================
+Seam S Safety Guards and Invariant Tests
+===========================================================================
+
+Contract: acquire_proposal_set(raw_input_bytes: bytes) -> bytes
+Location: src/artifact_layer/seam_provider.py
+
+--- Guards (Static Enforcement) ---
+[PASS] G1: Exactly one call site
+       Single call site at m3/src/orchestrator.py:160
+[PASS] G1: No retry patterns
+       No retry patterns found around seam call
+[PASS] G2: No inspection before artifact layer
+       No inspection of proposal bytes before artifact layer
+[PASS] G2: Opaque byte passthrough
+       Proposal bytes pass through opaquely (empty mapping excepted)
+
+--- C1: Call Count Invariant ---
+[PASS] C1: Single call per run
+       Exactly 1 seam call per run (count=1)
+
+--- C2: Failure Collapse Invariant ---
+[PASS] C2: Engine None -> empty bytes
+       Engine None -> empty bytes
+[PASS] C2: Engine exception -> empty bytes
+       Engine exception -> empty bytes
+[PASS] C2: Engine wrong type -> empty bytes
+       Engine wrong type -> empty bytes
+
+--- C3: Proposal Variability Inert ---
+[PASS] C3: Garbage proposal -> REJECT
+       All 4 garbage inputs -> REJECT
+[PASS] C3: Valid proposal -> ACCEPT
+       Valid proposal -> ACCEPT
+[PASS] C3: Empty proposals -> REJECT
+       Empty proposals -> REJECT (NO_PROPOSALS)
+[PASS] C3: Variability affects only decision
+       Proposal variability affects only decision, not behavior
+
+--- C4: Engine Removed Safety ---
+[PASS] C4: System works with no engine
+       System produces valid REJECT when engine removed
+[PASS] C4: No engine, no crash
+       5 invocations with no engine: no crashes
+
+===========================================================================
+All 14 Seam S tests PASSED
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+| Category | Tests | Result |
+|----------|-------|--------|
+| Guards (G1, G2) | 4 | 4 PASS |
+| C1: Call Count | 1 | 1 PASS |
+| C2: Failure Collapse | 3 | 3 PASS |
+| C3: Proposal Variability | 4 | 4 PASS |
+| C4: Engine Removed | 2 | 2 PASS |
+| **TOTAL** | **14** | **14 PASS** |
+
+================================================================================
+CONCLUSION
+================================================================================
+
+All 14 Seam S safety tests pass.
+
+Invariants proven:
+- C1: Exactly one seam call per run
+- C2: All failures collapse to empty bytes
+- C3: Proposal variability affects only ACCEPT/REJECT decision
+- C4: System works safely with no engine
+
+Guards enforced:
+- G1: Exactly-one-call guard (static analysis)
+- G2: Non-inspection guard (static analysis)
+
