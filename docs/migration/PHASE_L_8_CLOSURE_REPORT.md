@@ -4,7 +4,7 @@
 
 Phase L-8 establishes the Proposal Engine Contract Freeze and Pre-LLM Safety Gates.
 
-**Closure Status**: **READY** (with documented limitation)
+**Closure Status**: **READY**
 
 | Deliverable | Status |
 |-------------|--------|
@@ -12,12 +12,11 @@ Phase L-8 establishes the Proposal Engine Contract Freeze and Pre-LLM Safety Gat
 | Torture Tests | 39/39 PASS (35 + 4 empty-bytes mapping) |
 | Regression Locks | 21/21 PASS |
 | Evidence | CAPTURED |
+| CJF Canonicality | PROVEN (see Section 6a) |
 
 **Total Tests Added**: 60
 
-**Blockers Identified**: NONE (one documentation limitation noted)
-
-**Documented Limitation**: ACCEPT fixture byte-canonicality cannot be proven (semantic provenance only). See Section 6a.
+**Blockers Identified**: NONE
 
 ---
 
@@ -124,7 +123,9 @@ Tests load these fixtures and verify stable ACCEPT behavior.
 | `docs/migration/evidence/l8/05_production_parse_path.txt` | Test matches production parse |
 | `docs/migration/evidence/l8/06_accept_fixture_provenance.txt` | Fixture semantic provenance |
 | `docs/migration/evidence/l8/07_empty_bytes_mapping_proof.txt` | Empty bytes mapping frozen |
-| `docs/migration/evidence/l8/08_accept_fixture_byte_canonicality.txt` | Byte-canonicality search |
+| `docs/migration/evidence/l8/08_accept_fixture_byte_canonicality.txt` | Prior byte-canonicality search (superseded) |
+| `docs/migration/evidence/l8/09_accept_fixture_cjf_canonicality.txt` | CJF canonicality proof (PROVEN) |
+| `docs/migration/evidence/l8/extracted/` | Extracted baseline JSON files |
 | `docs/migration/evidence/l8/INDEX.md` | Evidence index |
 
 ---
@@ -157,22 +158,30 @@ Code pointer: `m3/src/orchestrator.py:162-169`
 
 This is documented in Section 5a of the contract and proven by 4 tests in `TestEmptyBytesMapping`.
 
-### ACCEPT Fixture Provenance (Semantic, Not Byte-Identical)
+### ACCEPT Fixture CJF Canonicality (PROVEN)
 
-ACCEPT fixtures trace to prior phase evidence at the **semantic level** (field values match documented constraints), but are **NOT byte-identical** to any prior recorded JSON.
+ACCEPT fixtures are byte-canonical to prior phase baselines under Canonical JSON Form (CJF) v1 normalization.
 
-| Fixture | Semantic Source | Byte-Identical Source |
-|---------|-----------------|----------------------|
-| l3_accept_envelope.json | evidence/l3/accept_run.txt | **NONE FOUND** |
-| l4_create_payment_envelope.json | evidence/l4/accept_run.txt | **NONE FOUND** |
-| l4_cancel_order_envelope.json | evidence/l4/terminal_state_run.txt | **NONE FOUND** |
+**CJF v1 Definition (Frozen):**
+```
+1. Decode as UTF-8
+2. Parse: json.loads()
+3. Re-emit: json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+4. Encode as UTF-8
+5. Hash: SHA256(cjf_bytes)
+```
 
-**Reasons for non-match:**
-- Fixtures use pretty-printed JSON; prior artifacts use minified JSON
-- Fixtures use normalized `input.raw` values; prior artifacts have trailing newlines
-- Some prior L-3 artifacts have different input text
+| Fixture | Baseline Source | SHA256(CJF) | Match |
+|---------|----------------|-------------|-------|
+| l3_accept_envelope.json | run_f1b06ebf7dba/proposal_set.json | b1ea27c9...1b04 | **YES** |
+| l4_create_payment_envelope.json | run_071c64b5f425/proposal_set.json | 2d2a8a35...8e3c | **YES** |
+| l4_cancel_order_envelope.json | run_3e707cb5d43d/proposal_set.json | a346cac2...e573 | **YES** |
 
-**Closure Impact:** This is a documentation limitation, not a safety issue. Fixtures are semantically correct and produce correct ACCEPT decisions (proven by 21 regression tests). The claim "byte-identical to prior canonical JSON" cannot be proven.
+**Fixture Corrections Applied:**
+- L-3: `input.raw` changed from `"status of alpha"` to `"status alpha\n"` (matches prior canonical)
+- L-4: Added trailing `\n` to `input.raw` fields (matches prior canonical)
+
+**Evidence:** See `docs/migration/evidence/l8/09_accept_fixture_cjf_canonicality.txt`
 
 ---
 

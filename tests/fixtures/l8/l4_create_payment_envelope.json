@@ -1,6 +1,6 @@
 {
   "schema_version": "m1.0",
-  "input": {"raw": "create payment"},
+  "input": {"raw": "create payment\n"},
   "proposals": [{
     "kind": "STATE_TRANSITION_REQUEST",
     "payload": {

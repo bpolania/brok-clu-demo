@@ -1,6 +1,6 @@
 {
   "schema_version": "m1.0",
-  "input": {"raw": "status of alpha"},
+  "input": {"raw": "status alpha\n"},
   "proposals": [{
     "kind": "ROUTE_CANDIDATE",
     "payload": {

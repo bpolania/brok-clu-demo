@@ -1,6 +1,6 @@
 {
   "schema_version": "m1.0",
-  "input": {"raw": "cancel order"},
+  "input": {"raw": "cancel order\n"},
   "proposals": [{
     "kind": "STATE_TRANSITION_REQUEST",
     "payload": {

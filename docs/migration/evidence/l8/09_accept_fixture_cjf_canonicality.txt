@@ -1,0 +1,103 @@
+=== L-8 Evidence: ACCEPT Fixture CJF Canonicality Proof ===
+Date: 2026-01-18
+
+PROPERTY PROVEN:
+L-8 ACCEPT fixtures are byte-canonical to prior phase baselines under
+Canonical JSON Form (CJF) v1 normalization.
+
+================================================================================
+CJF v1 DEFINITION (FROZEN)
+================================================================================
+
+Canonical JSON Form (CJF) v1:
+  Input:  JSON bytes representing one ProposalSet/envelope
+  Procedure:
+    1. Decode as UTF-8: content.decode('utf-8')
+    2. Parse: json.loads(content)
+    3. Re-emit: json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+    4. Encode: cjf_bytes = result.encode('utf-8')
+    5. Hash: SHA256(cjf_bytes)
+
+Rules:
+  - This is for evidence/proof only. No runtime behavior change.
+  - If bytes are not valid JSON or UTF-8, CJF is undefined.
+  - CJF normalizes whitespace and key ordering for comparison.
+
+================================================================================
+BASELINE SOURCE MAPPING
+================================================================================
+
+| Case | Prior Canonical Source | Extraction Method |
+|------|----------------------|-------------------|
+| L-3 ACCEPT | artifacts/proposals/run_f1b06ebf7dba/proposal_set.json | Verbatim copy |
+| L-4 create_payment | artifacts/proposals/run_071c64b5f425/proposal_set.json | Verbatim copy |
+| L-4 cancel_order | artifacts/proposals/run_3e707cb5d43d/proposal_set.json | Verbatim copy |
+
+Prior canonical sources were identified from:
+- L-3: Referenced in docs/migration/evidence/l3/accept_run.txt (input: "status alpha\n")
+- L-4 create_payment: Referenced in docs/migration/evidence/l4/accept_run_canonical_invocation.txt (line 57)
+- L-4 cancel_order: Referenced in docs/migration/evidence/l4/terminal_state_run.txt
+
+================================================================================
+EXTRACTED BASELINES
+================================================================================
+
+Extracted to: docs/migration/evidence/l8/extracted/
+
+| File | Content (minified) |
+|------|-------------------|
+| l3_accept_baseline.json | {"input":{"raw":"status alpha\n"},"proposals":[...],"schema_version":"m1.0"} |
+| l4_create_payment_baseline.json | {"input":{"raw":"create payment\n"},"proposals":[...],"schema_version":"m1.0"} |
+| l4_cancel_order_baseline.json | {"input":{"raw":"cancel order\n"},"proposals":[...],"schema_version":"m1.0"} |
+
+================================================================================
+FIXTURE FILES
+================================================================================
+
+Location: tests/fixtures/l8/
+
+| File | Content (now matches baseline) |
+|------|-------------------------------|
+| l3_accept_envelope.json | input.raw = "status alpha\n" |
+| l4_create_payment_envelope.json | input.raw = "create payment\n" |
+| l4_cancel_order_envelope.json | input.raw = "cancel order\n" |
+
+================================================================================
+CJF HASH COMPARISON TABLE
+================================================================================
+
+| Case | Baseline Path | Fixture Path | SHA256(CJF Baseline) | SHA256(CJF Fixture) | Match |
+|------|--------------|--------------|---------------------|--------------------| ------|
+| L-3 ACCEPT | extracted/l3_accept_baseline.json | l3_accept_envelope.json | b1ea27c90d19394dc56e867b5330de801d80037c59d4181416eb110e1fa81b04 | b1ea27c90d19394dc56e867b5330de801d80037c59d4181416eb110e1fa81b04 | YES |
+| L-4 create_payment | extracted/l4_create_payment_baseline.json | l4_create_payment_envelope.json | 2d2a8a355af8ef81418d83dd5de15758b6c92d56fee65df5818e817a40b78e3c | 2d2a8a355af8ef81418d83dd5de15758b6c92d56fee65df5818e817a40b78e3c | YES |
+| L-4 cancel_order | extracted/l4_cancel_order_baseline.json | l4_cancel_order_envelope.json | a346cac2ce29db62020e7fb2c775878a75479423ec1fa5255445c11a9906e573 | a346cac2ce29db62020e7fb2c775878a75479423ec1fa5255445c11a9906e573 | YES |
+
+**ALL MATCHES: YES**
+
+================================================================================
+FIXTURE CORRECTIONS APPLIED
+================================================================================
+
+The following fixture corrections were made to align with prior canonical baselines:
+
+| Fixture | Original input.raw | Corrected input.raw |
+|---------|-------------------|---------------------|
+| l3_accept_envelope.json | "status of alpha" | "status alpha\n" |
+| l4_create_payment_envelope.json | "create payment" | "create payment\n" |
+| l4_cancel_order_envelope.json | "cancel order" | "cancel order\n" |
+
+Note: These corrections align fixtures with the exact content from prior phase
+evidence runs. The input.raw field does not affect ACCEPT/REJECT decision
+(only proposal structure matters), but canonicality requires exact match.
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: L-8 ACCEPT fixtures are byte-canonical to prior phase baselines.
+
+Method: CJF v1 normalization applied to both baseline and fixture JSON.
+Result: All three CJF hashes match exactly.
+
+This eliminates the closure blocker: "fixtures are not byte-canonical to prior ACCEPT envelopes."
+

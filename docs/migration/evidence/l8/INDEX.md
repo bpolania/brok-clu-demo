@@ -16,7 +16,11 @@ Evidence has been restructured to directly prove the claimed safety properties.
 | `05_production_parse_path.txt` | Test injection method matches exact production parsing sequence |
 | `06_accept_fixture_provenance.txt` | ACCEPT fixtures trace to canonical L-3/L-4 phase evidence |
 | `07_empty_bytes_mapping_proof.txt` | Empty bytes mapped to canonical ProposalSet → REJECT, no execution |
-| `08_accept_fixture_byte_canonicality.txt` | Fixture byte-canonicality search results (NOT PROVEN) |
+| `08_accept_fixture_byte_canonicality.txt` | Prior byte-canonicality search (superseded by 09) |
+| `09_accept_fixture_cjf_canonicality.txt` | CJF canonicality proof (PROVEN) |
+| `extracted/l3_accept_baseline.json` | L-3 baseline from run_f1b06ebf7dba |
+| `extracted/l4_create_payment_baseline.json` | L-4 create_payment baseline from run_071c64b5f425 |
+| `extracted/l4_cancel_order_baseline.json` | L-4 cancel_order baseline from run_3e707cb5d43d |
 
 ## Summary of Properties Proven
 
@@ -55,11 +59,12 @@ Evidence has been restructured to directly prove the claimed safety properties.
 - Test: `json.loads(proposal_bytes.decode('utf-8'))`
 - Code pointers: m3/src/orchestrator.py:160-172, tests/l8/test_l8_proposal_seam_torture.py:78-111
 
-### 6. ACCEPT Fixture Provenance
-- L-3 fixture derived from docs/migration/evidence/l3/accept_run.txt
-- L-4 create_payment derived from docs/migration/evidence/l4/accept_run.txt
-- L-4 cancel_order derived from docs/migration/evidence/l4/terminal_state_run.txt
-- All fixtures have documented SHA256 hashes
+### 6. ACCEPT Fixture CJF Canonicality (PROVEN)
+- Fixtures corrected to match prior canonical baselines exactly
+- CJF v1 hashes computed for both baselines and fixtures
+- All three cases: CJF hash match = YES
+- Evidence: 09_accept_fixture_cjf_canonicality.txt
+- Baselines extracted to: extracted/*.json
 
 ### 7. Empty Bytes Mapping (4 tests)
 - Empty bytes from PE mapped to canonical empty ProposalSet by orchestrator

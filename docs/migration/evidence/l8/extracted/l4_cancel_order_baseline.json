@@ -1,0 +1,1 @@
+{"input":{"raw":"cancel order\n"},"proposals":[{"kind":"STATE_TRANSITION_REQUEST","payload":{"event_token":"cancel_order"}}],"schema_version":"m1.0"}

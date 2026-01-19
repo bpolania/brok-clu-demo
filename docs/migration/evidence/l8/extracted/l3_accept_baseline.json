@@ -1,0 +1,1 @@
+{"input":{"raw":"status alpha\n"},"proposals":[{"kind":"ROUTE_CANDIDATE","payload":{"intent":"STATUS_QUERY","slots":{"target":"alpha"}}}],"schema_version":"m1.0"}
