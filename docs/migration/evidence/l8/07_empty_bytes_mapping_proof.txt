@@ -1,0 +1,96 @@
+=== L-8 Evidence: Empty Bytes Mapping Proof ===
+Date: 2026-01-18
+
+PROPERTY PROVEN:
+When Proposal Engine returns empty bytes, the orchestrator creates a canonical
+empty ProposalSet JSON which then deterministically REJECTs (NO_PROPOSALS)
+and does not trigger execution.
+
+================================================================================
+PRODUCTION CODE PATH (m3/src/orchestrator.py:162-169)
+================================================================================
+
+```python
+proposal_bytes = acquire_proposal_set(raw_input_bytes)
+
+# Empty bytes -> create empty proposal set for REJECT path
+if not proposal_bytes:
+    proposal_set = {
+        "schema_version": "m1.0",
+        "input": {"raw": ""},
+        "proposals": []
+    }
+    proposal_json = json.dumps(proposal_set, sort_keys=True)
+```
+
+This mapping produces the canonical JSON:
+  {"input": {"raw": ""}, "proposals": [], "schema_version": "m1.0"}
+
+The empty ProposalSet then passes to validation, which REJECTs with NO_PROPOSALS.
+
+================================================================================
+DISTINCTION: EMPTY BYTES VS MALFORMED BYTES
+================================================================================
+
+| Input Type | Orchestrator Path | Reason for REJECT |
+|------------|-------------------|-------------------|
+| Empty bytes `b""` | `if not proposal_bytes:` branch | NO_PROPOSALS |
+| Non-UTF-8 bytes | Decode exception -> empty ProposalSet | NO_PROPOSALS |
+| Invalid JSON | Parse exception -> empty ProposalSet | NO_PROPOSALS |
+| Valid JSON, 0 proposals | Passed to validator | NO_PROPOSALS |
+
+All paths ultimately produce NO_PROPOSALS, but the orchestrator handles the
+first three cases by mapping to the canonical empty ProposalSet before
+the validator ever sees them.
+
+================================================================================
+TEST CLASS: TestEmptyBytesMapping
+================================================================================
+
+Location: tests/l8/test_l8_proposal_seam_torture.py
+
+Tests:
+1. test_empty_bytes_mapping_produces_reject - Verifies REJECT with NO_PROPOSALS
+2. test_empty_bytes_mapping_no_execution - Verifies gateway does not execute
+3. test_empty_bytes_mapping_no_stdout_raw_kv - Verifies no stdout.raw.kv exists
+4. test_empty_bytes_mapping_json_deterministic - Verifies JSON is deterministic
+
+================================================================================
+PYTEST OUTPUT
+================================================================================
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/bpolania/Documents/GitHub/brok-clu-demo
+plugins: anyio-4.12.1
+collected 4 items
+
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyBytesMapping::test_empty_bytes_mapping_json_deterministic PASSED
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyBytesMapping::test_empty_bytes_mapping_no_execution PASSED
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyBytesMapping::test_empty_bytes_mapping_no_stdout_raw_kv PASSED
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyBytesMapping::test_empty_bytes_mapping_produces_reject PASSED
+
+============================== 4 passed ==============================
+
+================================================================================
+CONTRACT LINKAGE
+================================================================================
+
+This behavior is now documented in Section 5a of the L-8 Proposal Engine Contract:
+"Empty Proposal Bytes Mapping (Pre-Validation Canonicalization)"
+
+The contract states:
+- This mapping is NOT authority (still deterministically REJECTs)
+- It is a fixed safety behavior of the orchestrator
+- It is now FROZEN as part of the seam specification
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: Empty bytes from Proposal Engine are mapped to canonical empty ProposalSet.
+PROVEN: The mapped ProposalSet deterministically REJECTs with NO_PROPOSALS.
+PROVEN: No execution occurs (gateway blocks on REJECT).
+PROVEN: No stdout.raw.kv is created.
+PROVEN: The JSON mapping is deterministic (sort_keys=True).
+

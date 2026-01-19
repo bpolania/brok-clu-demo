@@ -1,0 +1,139 @@
+=== Seam S Evidence: End-to-End Transcript ===
+Date: 2026-01-19
+
+PURPOSE:
+Demonstrate ACCEPT-path invariance and REJECT non-execution via
+actual test runs (not only pytest output).
+
+================================================================================
+TEST RUN TRANSCRIPT
+================================================================================
+
+Command: /opt/homebrew/bin/python3 tests/seam_s/test_seam_s_freeze_grade.py
+
+Output:
+===========================================================================
+Seam S Freeze-Grade Tests
+===========================================================================
+
+--- G1: Runtime Guard ---
+[PASS] G1: First call succeeds
+       First call succeeds with OpaqueProposalBytes
+[PASS] G1: Second call raises
+       Second call raises SeamSViolation
+[PASS] G1: Different contexts independent
+       Different contexts are independent
+
+--- G2: Opaque Wrapper ---
+[PASS] G2: to_bytes() works
+       to_bytes() returns raw bytes
+[PASS] G2: str() disabled
+       str() disabled by construction
+[PASS] G2: len() disabled
+       len() disabled by construction
+[PASS] G2: bool() disabled
+       bool() disabled by construction
+[PASS] G2: iteration disabled
+       iteration disabled by construction
+[PASS] G2: indexing disabled
+       indexing disabled by construction
+
+--- G3: Static Analysis ---
+[PASS] G3: Single call site
+       Single call site at m3/src/orchestrator.py:169
+[PASS] G3: No retry patterns
+       No retry patterns found
+
+--- C1: Call Count ---
+[PASS] C1: Runtime guard enforces single call
+       Runtime guard enforces single call
+
+--- C2: Failure Collapse ---
+[PASS] C2: Engine None -> empty
+       Engine None -> OpaqueProposalBytes(b'')
+[PASS] C2: Engine raises -> empty
+       Engine raises -> OpaqueProposalBytes(b'')
+
+--- C3: Proposal Variability ---
+[PASS] C3: Garbage -> REJECT
+       All garbage inputs -> REJECT
+[PASS] C3: Valid -> ACCEPT
+       Valid proposal -> ACCEPT
+
+--- C4: Engine Removed ---
+[PASS] C4: No engine -> REJECT
+       No engine -> REJECT
+
+--- C5: ACCEPT Invariance ---
+[PASS] C5: ACCEPT hash invariance
+       ACCEPT execution hash invariant: 44136fa355b3678a...
+[PASS] C5: REJECT never executes
+       REJECT never executes
+
+===========================================================================
+All 19 freeze-grade tests PASSED
+
+================================================================================
+ACCEPT-PATH INVARIANCE DEMONSTRATION
+================================================================================
+
+Test: test_c5_accept_execution_hash_invariance
+
+Two ACCEPT runs with different proposal bytes:
+
+| Run | input.raw | Decision | Action Hash (first 16 chars) |
+|-----|-----------|----------|------------------------------|
+| 1 | "status alpha\n" | ACCEPT | 44136fa355b3678a |
+| 2 | "check status of alpha\n" | ACCEPT | 44136fa355b3678a |
+
+Result: **HASH MATCH** - Execution action is identical despite different input.raw
+
+================================================================================
+REJECT NON-EXECUTION DEMONSTRATION
+================================================================================
+
+Test: test_c5_reject_never_executes
+
+REJECT run with empty proposals:
+
+| Field | Value |
+|-------|-------|
+| proposals | [] |
+| Decision | REJECT |
+| reason_code | NO_PROPOSALS |
+| executed | False |
+| stdout.raw.kv | NOT CREATED |
+
+Result: **REJECT NEVER EXECUTES** - No authoritative output created
+
+================================================================================
+REPRODUCTION COMMANDS
+================================================================================
+
+# Run freeze-grade tests
+/opt/homebrew/bin/python3 tests/seam_s/test_seam_s_freeze_grade.py
+
+# Run via pytest
+/opt/homebrew/bin/pytest tests/seam_s/test_seam_s_freeze_grade.py -v
+
+# Run all safety tests
+/opt/homebrew/bin/pytest tests/seam_s/ tests/l8/ tests/l1/ -v
+
+================================================================================
+SUMMARY
+================================================================================
+
+Total Tests: 19 freeze-grade tests
+Result: ALL PASS
+
+Invariants Demonstrated:
+1. G1: Runtime guard prevents second seam call (raises SeamSViolation)
+2. G2: Opaque wrapper prevents inspection by construction
+3. G3: Static analysis confirms single call site
+4. C1-C4: Prior invariants still hold
+5. C5: ACCEPT execution hash invariance proven
+
+Evidence:
+- ACCEPT runs: Hash match confirmed (44136fa355b3678a...)
+- REJECT runs: No execution, no stdout.raw.kv
+

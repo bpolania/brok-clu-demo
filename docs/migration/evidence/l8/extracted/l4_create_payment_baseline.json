@@ -1,0 +1,1 @@
+{"input":{"raw":"create payment\n"},"proposals":[{"kind":"STATE_TRANSITION_REQUEST","payload":{"event_token":"create_payment"}}],"schema_version":"m1.0"}

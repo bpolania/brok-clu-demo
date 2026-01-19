@@ -1,0 +1,70 @@
+=== L-8 Evidence: REJECT Gate - No Execution ===
+Date: 2026-01-18
+
+SAFETY PROPERTY PROVEN:
+When artifact decision is REJECT, the execution gateway does NOT execute
+and no stdout.raw.kv is produced.
+
+================================================================================
+TEST APPROACH
+================================================================================
+
+1. Create REJECT artifact via build_artifact() with invalid input
+2. Pass artifact to ExecutionGateway.execute_if_accepted()
+3. Assert: result.executed == False
+4. Assert: result.decision == "REJECT"
+5. Assert: No stdout.raw.kv exists anywhere in run directory
+
+This proves the gateway correctly gates on ACCEPT and prevents execution
+when the artifact decision is REJECT.
+
+================================================================================
+REJECT CASES TESTED
+================================================================================
+
+| Input                    | Reason Code          | Executed? |
+|--------------------------|----------------------|-----------|
+| Empty dict {}            | INVALID_PROPOSALS    | NO        |
+| Wrong schema version     | INVALID_PROPOSALS    | NO        |
+| Zero proposals           | NO_PROPOSALS         | NO        |
+| Two proposals            | AMBIGUOUS_PROPOSALS  | NO        |
+
+All cases: gateway.execute_if_accepted() returned executed=False
+
+================================================================================
+PYTEST OUTPUT
+================================================================================
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/bpolania/Documents/GitHub/brok-clu-demo
+plugins: anyio-4.12.1
+collecting ... collected 3 items
+
+tests/l8/test_l8_accept_regression_locks.py::TestRejectExecutionGate::test_multiple_reject_reasons_no_execution PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestRejectExecutionGate::test_reject_artifact_does_not_execute PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestRejectExecutionGate::test_reject_artifact_no_stdout_raw_kv PASSED
+
+============================== 3 passed ==============================
+
+================================================================================
+KEY ASSERTIONS (from test code)
+================================================================================
+
+test_reject_artifact_does_not_execute:
+    self.assertFalse(result.executed, "Gateway executed despite REJECT artifact")
+    self.assertEqual(result.decision, "REJECT")
+
+test_reject_artifact_no_stdout_raw_kv:
+    for root, dirs, files in os.walk(self.run_dir):
+        self.assertNotIn("stdout.raw.kv", files,
+            f"stdout.raw.kv found at {root} despite REJECT")
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: REJECT artifacts do not trigger execution.
+PROVEN: No stdout.raw.kv is created for REJECT artifacts.
+
+This is the critical safety property: "no execution without ACCEPT."

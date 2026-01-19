@@ -1,0 +1,82 @@
+=== L-8 Evidence: Contract Freeze ===
+Date: 2026-01-18
+
+Document: docs/migration/PHASE_L_8_PROPOSAL_ENGINE_CONTRACT.md
+Version: L-8.1 (corrected)
+
+================================================================================
+KEY NON-GUARANTEES (excerpt from contract)
+================================================================================
+
+From Section 3: "What the Proposal Engine Does NOT Guarantee"
+
+3.1 Output Format
+- Output MAY be empty bytes
+- Output MAY be non-UTF-8 binary data
+- Output MAY be invalid JSON
+- Output MAY be valid JSON with invalid schema
+- Output MAY contain unexpected fields or missing required fields
+
+3.3 Determinism
+- Output MAY vary between calls with identical input
+- Output MAY depend on external factors (for LLM engines)
+- Only the deterministic engine binding provides determinism
+
+================================================================================
+AUTHORITY BOUNDARY (excerpt from contract)
+================================================================================
+
+From Section 1.2: "Authority Classification"
+
+| Component                    | Authority Level                           |
+|------------------------------|-------------------------------------------|
+| Proposal Engine output       | NONE (untrusted, non-authoritative)       |
+| Artifact layer validation    | Deterministic collapse to ACCEPT/REJECT   |
+| Artifact layer decision      | WRAPPER-LEVEL (authoritative)             |
+| stdout.raw.kv                | AUTHORITATIVE (sole execution truth)      |
+
+From Section 4: "What the System MUST NOT Do"
+
+4.1 Trust Violations
+- The system MUST NOT trust Proposal Engine output as valid
+- The system MUST NOT trust Proposal Engine output as safe
+- The system MUST NOT trust Proposal Engine output as authoritative
+- The system MUST NOT bypass artifact layer validation
+
+================================================================================
+FAILURE COLLAPSE (excerpt from contract)
+================================================================================
+
+From Section 5: "Failure Collapse Rules"
+
+| Failure Mode                        | What Happens         |
+|-------------------------------------|----------------------|
+| Engine returns empty bytes          | Artifact layer: REJECT |
+| Engine returns non-UTF-8 bytes      | Artifact layer: REJECT |
+| Engine returns invalid JSON         | Artifact layer: REJECT |
+| Engine returns valid JSON, invalid schema | Artifact layer: REJECT |
+
+**Authoritative Invariant**: All invalid Proposal Engine output deterministically
+collapses to REJECT.
+
+================================================================================
+SCHEMA FIELD CONSTRAINTS (corrected understanding)
+================================================================================
+
+From Section 6: "Schema Field Constraints"
+
+These limits are **NOT**:
+- A limit on raw input bytes to the Proposal Engine
+- A limit on ProposalSet bytes size
+- A limit on engine response time
+- A limit on engine resource usage
+
+The 4096 limit applies to the `input.raw` JSON STRING FIELD, not raw input bytes.
+
+================================================================================
+VERIFICATION
+================================================================================
+
+Contract document exists at: docs/migration/PHASE_L_8_PROPOSAL_ENGINE_CONTRACT.md
+Contract version: L-8.1 (corrected)
+Status: FROZEN

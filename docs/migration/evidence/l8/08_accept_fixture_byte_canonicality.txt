@@ -1,0 +1,157 @@
+=== L-8 Evidence: ACCEPT Fixture Byte-Canonicality ===
+Date: 2026-01-18
+
+PROPERTY UNDER TEST:
+Whether L-8 ACCEPT fixtures are byte-for-byte identical to prior canonical sources.
+
+================================================================================
+RESULT: NO BYTE SOURCE FOUND FOR ANY FIXTURE
+================================================================================
+
+None of the L-8 ACCEPT fixtures have a byte-identical prior canonical source.
+The fixtures are derived from semantic constraints documented in prior phase
+evidence, NOT extracted byte-for-byte from recorded canonical JSON.
+
+================================================================================
+FIXTURE HASHES
+================================================================================
+
+| Fixture | SHA256 |
+|---------|--------|
+| l3_accept_envelope.json | 2c7dd49d976906ddbad0357292e346a91362af1a5bde906a3bf4eb3a7cd3f480 |
+| l4_create_payment_envelope.json | 507945fa4e4cf03c69f8860866f124ccda9578e402472a98b2e5d59c71e8a5fd |
+| l4_cancel_order_envelope.json | cb6c794b0ea081bc03dc9e3425b2cdffc7316f32ce6470a13a1e76094fb4b1d1 |
+
+================================================================================
+SEARCHED PATHS
+================================================================================
+
+Searched for prior canonical byte sources in:
+- docs/migration/evidence/l3/
+- docs/migration/evidence/l4/
+- docs/migration/evidence/l6/
+- docs/migration/evidence/l7/
+- artifacts/proposals/
+
+================================================================================
+CLOSEST MATCHES FOUND
+================================================================================
+
+### L-3 Fixture: l3_accept_envelope.json
+
+Fixture content (pretty-printed):
+{
+  "schema_version": "m1.0",
+  "input": {"raw": "status of alpha"},
+  "proposals": [{
+    "kind": "ROUTE_CANDIDATE",
+    "payload": {
+      "intent": "STATUS_QUERY",
+      "slots": {"target": "alpha"}
+    }
+  }]
+}
+
+Closest artifact: artifacts/proposals/run_c181bec9c41c/proposal_set.json
+Content: {"input":{"raw":"status of alpha subsystem"},"proposals":[...]}
+SHA256: 4692eda52ce773414a4cd59de0544d0ad9a61d062595ff3cd1c1fdd1fbf36ccc
+
+BYTE MATCH: NO
+Differences:
+- Fixture: "status of alpha"
+- Artifact: "status of alpha subsystem"
+- Fixture: pretty-printed with newlines
+- Artifact: minified JSON
+
+### L-4 create_payment Fixture: l4_create_payment_envelope.json
+
+Fixture content (pretty-printed):
+{
+  "schema_version": "m1.0",
+  "input": {"raw": "create payment"},
+  "proposals": [{
+    "kind": "STATE_TRANSITION_REQUEST",
+    "payload": {
+      "event_token": "create_payment"
+    }
+  }]
+}
+
+Closest artifact: artifacts/proposals/run_071c64b5f425/proposal_set.json
+Content: {"input":{"raw":"create payment\n"},...}
+SHA256: 2d2a8a355af8ef81418d83dd5de15758b6c92d56fee65df5818e817a40b78e3c
+
+BYTE MATCH: NO
+Differences:
+- Fixture: "create payment" (no trailing newline)
+- Artifact: "create payment\n" (has trailing newline)
+- Fixture: pretty-printed
+- Artifact: minified
+
+### L-4 cancel_order Fixture: l4_cancel_order_envelope.json
+
+Fixture content (pretty-printed):
+{
+  "schema_version": "m1.0",
+  "input": {"raw": "cancel order"},
+  "proposals": [{
+    "kind": "STATE_TRANSITION_REQUEST",
+    "payload": {
+      "event_token": "cancel_order"
+    }
+  }]
+}
+
+Closest artifact: artifacts/proposals/run_3e707cb5d43d/proposal_set.json
+Content: {"input":{"raw":"cancel order\n"},...}
+SHA256: a346cac2ce29db62020e7fb2c775878a75479423ec1fa5255445c11a9906e573
+
+BYTE MATCH: NO
+Differences:
+- Fixture: "cancel order" (no trailing newline)
+- Artifact: "cancel order\n" (has trailing newline)
+- Fixture: pretty-printed
+- Artifact: minified
+
+================================================================================
+HASH COMPARISON TABLE
+================================================================================
+
+| Fixture | Fixture SHA256 | Closest Source SHA256 | Match? |
+|---------|----------------|----------------------|--------|
+| l3_accept_envelope.json | 2c7dd49d...3f480 | 4692eda5...36ccc | NO |
+| l4_create_payment_envelope.json | 507945fa...a5fd | 2d2a8a35...78e3c | NO |
+| l4_cancel_order_envelope.json | cb6c794b...b1d1 | a346cac2...06e573 | NO |
+
+================================================================================
+CONCLUSION
+================================================================================
+
+ACCEPT FIXTURE BYTE-CANONICALITY: **NOT PROVEN**
+
+The L-8 ACCEPT fixtures are SEMANTICALLY derived from prior phase evidence
+but are NOT byte-identical to any recorded canonical JSON.
+
+Reasons for non-match:
+1. Fixtures use pretty-printed JSON; prior artifacts use minified JSON
+2. Fixtures use normalized input.raw values; prior artifacts have trailing newlines
+3. Some L-3 artifacts have different input text ("status of alpha subsystem" vs "status of alpha")
+
+================================================================================
+CLOSURE IMPACT
+================================================================================
+
+This is a **DOCUMENTATION ISSUE**, not a safety issue:
+
+1. The fixtures are semantically correct for L-3/L-4 ACCEPT behavior
+2. The fixtures produce correct ACCEPT decisions (proven by 21 regression tests)
+3. The fixtures are deterministic (proven by stability tests)
+4. The fixtures match the semantic constraints from prior phase evidence
+
+However, the closure claim "fixtures are canonical byte-for-byte" cannot be proven
+because no byte-identical prior source exists.
+
+RECOMMENDATION: Update closure report to state:
+"Fixtures are derived from prior semantic constraints, not byte-identical to
+recorded canonical JSON."
+
