@@ -1,0 +1,63 @@
+=== L-8 Evidence: Torture Tests with Bytes Injection ===
+Date: 2026-01-18
+
+TEST APPROACH:
+- Tests inject raw bytes via _inject_bytes() helper
+- Bytes are parsed through json.loads() - same as production
+- Invalid bytes (non-JSON, non-UTF-8) collapse to REJECT
+- Tests documented in: tests/l8/test_l8_proposal_seam_torture.py
+
+INJECTION METHODS (from test file docstring):
+1. BYTES INJECTION: Raw bytes parsed through json.loads() before build_artifact()
+2. DICT INJECTION: Direct dict injection for schema violation tests
+
+KEY BYTES-BASED TEST CLASSES:
+- TestEmptyAndGarbageBytes: Fixed byte fixtures (b'\x00\x01...', PNG headers, etc.)
+- TestInvalidJSONBytes: Truncated JSON, invalid UTF-8, malformed syntax
+
+================================================================================
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0 -- /opt/homebrew/Cellar/pytest/8.4.1/libexec/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/bpolania/Documents/GitHub/brok-clu-demo
+plugins: anyio-4.12.1
+collecting ... collected 35 items
+
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyAndGarbageBytes::test_empty_bytes_rejects PASSED [  2%]
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyAndGarbageBytes::test_garbage_bytes_deterministic PASSED [  5%]
+tests/l8/test_l8_proposal_seam_torture.py::TestEmptyAndGarbageBytes::test_garbage_bytes_reject PASSED [  8%]
+tests/l8/test_l8_proposal_seam_torture.py::TestInvalidJSONBytes::test_invalid_json_bytes_reject PASSED [ 11%]
+tests/l8/test_l8_proposal_seam_torture.py::TestInvalidJSONBytes::test_invalid_utf8_bytes_reject PASSED [ 14%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_invalid_intent PASSED [ 17%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_invalid_proposal_kind PASSED [ 20%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_missing_input PASSED [ 22%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_missing_proposals PASSED [ 25%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_missing_schema_version PASSED [ 28%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_non_dict_input_to_build_artifact PASSED [ 31%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_wrong_input_type PASSED [ 34%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_wrong_proposals_type PASSED [ 37%]
+tests/l8/test_l8_proposal_seam_torture.py::TestValidJSONInvalidSchema::test_wrong_schema_version PASSED [ 40%]
+tests/l8/test_l8_proposal_seam_torture.py::TestUnexpectedFields::test_unexpected_input_field PASSED [ 42%]
+tests/l8/test_l8_proposal_seam_torture.py::TestUnexpectedFields::test_unexpected_payload_field PASSED [ 45%]
+tests/l8/test_l8_proposal_seam_torture.py::TestUnexpectedFields::test_unexpected_proposal_field PASSED [ 48%]
+tests/l8/test_l8_proposal_seam_torture.py::TestUnexpectedFields::test_unexpected_root_field PASSED [ 51%]
+tests/l8/test_l8_proposal_seam_torture.py::TestUnexpectedFields::test_unexpected_slots_field PASSED [ 54%]
+tests/l8/test_l8_proposal_seam_torture.py::TestMultipleProposals::test_max_proposals_reject PASSED [ 57%]
+tests/l8/test_l8_proposal_seam_torture.py::TestMultipleProposals::test_over_max_proposals_reject PASSED [ 60%]
+tests/l8/test_l8_proposal_seam_torture.py::TestMultipleProposals::test_two_proposals_reject PASSED [ 62%]
+tests/l8/test_l8_proposal_seam_torture.py::TestSchemaLimitViolations::test_error_entry_over_256_chars PASSED [ 65%]
+tests/l8/test_l8_proposal_seam_torture.py::TestSchemaLimitViolations::test_input_raw_exactly_4096_chars_zero_proposals PASSED [ 68%]
+tests/l8/test_l8_proposal_seam_torture.py::TestSchemaLimitViolations::test_input_raw_over_4096_chars PASSED [ 71%]
+tests/l8/test_l8_proposal_seam_torture.py::TestSchemaLimitViolations::test_large_but_valid_proposalset_bytes PASSED [ 74%]
+tests/l8/test_l8_proposal_seam_torture.py::TestSchemaLimitViolations::test_over_16_error_entries PASSED [ 77%]
+tests/l8/test_l8_proposal_seam_torture.py::TestControlCasesAccept::test_l3_envelope_accepts PASSED [ 80%]
+tests/l8/test_l8_proposal_seam_torture.py::TestControlCasesAccept::test_l3_envelope_with_mode_rejects PASSED [ 82%]
+tests/l8/test_l8_proposal_seam_torture.py::TestControlCasesAccept::test_l4_create_payment_accepts PASSED [ 85%]
+tests/l8/test_l8_proposal_seam_torture.py::TestL4StateTransition::test_illegal_transition_rejects PASSED [ 88%]
+tests/l8/test_l8_proposal_seam_torture.py::TestL4StateTransition::test_invalid_event_token_rejects PASSED [ 91%]
+tests/l8/test_l8_proposal_seam_torture.py::TestDeterminism::test_accept_decision_deterministic PASSED [ 94%]
+tests/l8/test_l8_proposal_seam_torture.py::TestDeterminism::test_bytes_determinism PASSED [ 97%]
+tests/l8/test_l8_proposal_seam_torture.py::TestDeterminism::test_reject_decision_deterministic PASSED [100%]
+
+============================== 35 passed in 0.07s ==============================

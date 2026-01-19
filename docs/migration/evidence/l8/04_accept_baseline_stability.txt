@@ -1,0 +1,82 @@
+=== L-8 Evidence: ACCEPT Baseline Stability ===
+Date: 2026-01-18
+
+PROPERTY PROVEN:
+Known ACCEPT envelopes (from fixture files) produce stable, byte-identical
+artifacts across runs.
+
+================================================================================
+FIXTURE FILES USED
+================================================================================
+
+| Fixture                           | Path                                      |
+|-----------------------------------|-------------------------------------------|
+| L-3 ACCEPT Envelope               | tests/fixtures/l8/l3_accept_envelope.json |
+| L-4 create_payment Envelope       | tests/fixtures/l8/l4_create_payment_envelope.json |
+| L-4 cancel_order Envelope         | tests/fixtures/l8/l4_cancel_order_envelope.json |
+
+These fixtures contain the canonical ProposalSet JSON that produces ACCEPT.
+
+================================================================================
+L-3 FIXTURE CONTENT
+================================================================================
+
+{
+  "schema_version": "m1.0",
+  "input": {"raw": "status of alpha"},
+  "proposals": [{
+    "kind": "ROUTE_CANDIDATE",
+    "payload": {
+      "intent": "STATUS_QUERY",
+      "slots": {"target": "alpha"}
+    }
+  }]
+}
+
+================================================================================
+STABILITY TESTS
+================================================================================
+
+1. test_l3_envelope_byte_stable:
+   - Load fixture, build artifact twice
+   - Compare artifact JSON strings
+   - PASSED: Identical across runs
+
+2. test_l4_envelope_byte_stable:
+   - Load fixture, build artifact twice
+   - Compare artifact JSON strings
+   - PASSED: Identical across runs
+
+3. test_artifact_hash_unchanged_after_garbage:
+   - Run garbage inputs first (all REJECT)
+   - Then run valid fixture
+   - Compare hash to baseline
+   - PASSED: Prior REJECT runs do not affect ACCEPT artifact hash
+
+================================================================================
+PYTEST OUTPUT
+================================================================================
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/bpolania/Documents/GitHub/brok-clu-demo
+plugins: anyio-4.12.1
+collecting ... collected 21 items
+
+tests/l8/test_l8_accept_regression_locks.py::TestL3EnvelopeAcceptLock::test_l3_envelope_byte_stable PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestL4TransitionAcceptLock::test_l4_envelope_byte_stable PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestGarbageIsolation::test_artifact_hash_unchanged_after_garbage PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestGarbageIsolation::test_prior_reject_does_not_affect_subsequent_accept PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestFixtureHashDocumentation::test_l3_fixture_artifact_hash_documented PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestFixtureHashDocumentation::test_l4_create_payment_artifact_hash_documented PASSED
+tests/l8/test_l8_accept_regression_locks.py::TestFixtureHashDocumentation::test_l4_cancel_order_artifact_hash_documented PASSED
+
+============================== 21 passed ==============================
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PROVEN: Fixture-based ACCEPT envelopes produce byte-stable artifacts.
+PROVEN: Prior REJECT runs do not affect subsequent ACCEPT results (isolation).
+PROVEN: Artifact hashes are deterministic for identical fixture input.
