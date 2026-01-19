@@ -1,0 +1,32 @@
+================================================================================
+L-7 Evidence: Expanded Discovery → authoritative_found (Unit Test)
+================================================================================
+
+Test: test_l7_expanded_discovery_unique_match
+
+This unit test demonstrates the L-7 TARGET SUCCESS CASE using an isolated
+fixture directory with exactly ONE stdout.raw.kv file.
+
+Test Method:
+  1. Create isolated temporary run_root
+  2. Create single execution directory with stdout.raw.kv
+  3. Compute SHA256 of that file
+  4. Create manifest with matching SHA256
+  5. Run expanded_discovery()
+  6. Verify UNIQUE outcome
+
+Why Unit Test:
+  The integration test cannot easily guarantee delta-only failure followed by
+  expanded discovery success, because ./brok execution may create new directories.
+  The unit test directly tests the _expanded_discovery() function with controlled
+  fixtures to prove the algorithm works correctly.
+
+Test Output:
+[PASS] L-7 TARGET SUCCESS: Expanded discovery → UNIQUE (authoritative_found)
+
+=================================================================================
+What This Proves:
+  - L-7 expanded discovery CAN return authoritative_found
+  - When exactly ONE stdout.raw.kv matches the manifest SHA256, it is returned
+  - The algorithm is deterministic and correct
+=================================================================================

@@ -2,6 +2,8 @@
 """
 Phase L-6 Path A Run Discovery Tests (Closure-Grade)
 
+Updated for L-7 compatibility: expanded discovery with SHA256 matching.
+
 Verifies L-6 Path A contract: Delta-only authoritative selection
 
 L-6 Path A Contract:
@@ -11,8 +13,13 @@ L-6 Path A Contract:
   - NO selection outside delta set
   - Three outcomes:
     1. Exactly 1 delta directory with stdout.raw.kv → use it
-    2. 0 delta directories with stdout.raw.kv → no execution (authoritative=null)
+    2. 0 delta directories with stdout.raw.kv → expanded discovery (L-7)
     3. >1 delta directories with stdout.raw.kv → fail closed
+
+L-7 Addition:
+  - When delta-only fails for ACCEPT, expanded discovery via SHA256 matching
+  - discovery_status field in JSON schema
+  - Disclaimer on stderr
 
 These tests verify delta-only selection without relying on ./brok behavior.
 """
@@ -395,6 +402,8 @@ def test_l6_integration_reject():
 
     Path A: REJECT creates observability dir only, no stdout.raw.kv in delta.
     Wrapper should report authoritative=null.
+
+    L-7: discovery_status must be 'authoritative_not_found' for REJECT.
     """
     result = subprocess.run(
         [_BROK_RUN_PATH, "payment succeeded"],
@@ -418,9 +427,15 @@ def test_l6_integration_reject():
     assert summary["decision"] == "REJECT", f"Expected REJECT, got {summary['decision']}"
     assert summary["authoritative_stdout_raw_kv"] is None, "REJECT: authoritative must be null"
     assert summary["authoritative_stdout_raw_kv_sha256"] is None, "REJECT: sha256 must be null"
+
+    # L-7: discovery_status must be authoritative_not_found for REJECT
+    assert summary["discovery_status"] == "authoritative_not_found", (
+        f"REJECT must have discovery_status='authoritative_not_found', got: {summary['discovery_status']}"
+    )
+
     assert lines[1] == "Authoritative output: NONE", f"Expected NONE, got: {lines[1]}"
 
-    print("[PASS] Integration: REJECT (authoritative=null)")
+    print("[PASS] Integration: REJECT (authoritative_not_found)")
 
 
 def test_l6_integration_accept_delta_behavior():
@@ -430,13 +445,9 @@ def test_l6_integration_accept_delta_behavior():
     Path A contract: Wrapper reports authoritative output ONLY if stdout.raw.kv
     is found in newly created run directories (delta set).
 
-    This test documents Path A behavior: we do NOT derive from manifests.
-
-    L-6B CONTRACT BOUNDARY NOTE:
-    - Observed condition: brok-run may report decision=ACCEPT while authoritative_stdout_raw_kv is null.
-    - Path A explanation: delta-only discovery did not find stdout.raw.kv in newly created run directories.
-    - Contract boundary: brok-run does not search outside the delta set under Path A.
-    - A follow-on phase is required to address this gap.
+    L-7 UPDATE: When delta-only fails, expanded discovery is used.
+    The wrapper now uses SHA256 matching from manifest to locate authoritative
+    output. discovery_status field indicates the locator outcome.
     """
     result = subprocess.run(
         [_BROK_RUN_PATH, "create payment"],
@@ -459,36 +470,39 @@ def test_l6_integration_accept_delta_behavior():
     # Verify decision is ACCEPT
     assert summary["decision"] == "ACCEPT", f"Expected ACCEPT, got {summary['decision']}"
 
-    # Path A: authoritative output depends on whether stdout.raw.kv was in delta
-    # This is Path A contract behavior
+    # L-7: Verify frozen schema has all 5 fields
+    assert "run_dir" in summary, "L-7 schema requires run_dir"
+    assert "decision" in summary, "L-7 schema requires decision"
+    assert "authoritative_stdout_raw_kv" in summary, "L-7 schema requires authoritative_stdout_raw_kv"
+    assert "authoritative_stdout_raw_kv_sha256" in summary, "L-7 schema requires sha256"
+    assert "discovery_status" in summary, "L-7 schema requires discovery_status"
 
-    # Verify frozen schema has all 4 fields
-    assert "run_dir" in summary, "Frozen schema requires run_dir"
-    assert "decision" in summary, "Frozen schema requires decision"
-    assert "authoritative_stdout_raw_kv" in summary, "Frozen schema requires authoritative_stdout_raw_kv"
-    assert "authoritative_stdout_raw_kv_sha256" in summary, "Frozen schema requires sha256"
+    # L-7: discovery_status must be a valid value
+    valid_statuses = ["authoritative_found", "authoritative_not_found", "authoritative_ambiguous"]
+    assert summary["discovery_status"] in valid_statuses, (
+        f"discovery_status must be one of {valid_statuses}, got: {summary['discovery_status']}"
+    )
 
-    # If authoritative is not null, verify it points to real file
-    if summary["authoritative_stdout_raw_kv"] is not None:
+    # L-7: Disclaimer must be present on stderr
+    assert "This wrapper is non-authoritative" in result.stderr, (
+        "L-7: Disclaimer must be present on stderr"
+    )
+
+    # Verify line 2 matches discovery_status
+    if summary["discovery_status"] == "authoritative_found":
+        assert summary["authoritative_stdout_raw_kv"] is not None
         assert os.path.isfile(summary["authoritative_stdout_raw_kv"]), (
-            "authoritative path must exist if not null"
+            "authoritative path must exist when found"
         )
-        # No warning expected when authoritative is found
-        assert "Warning:" not in result.stderr, (
-            "No warning expected when authoritative is in delta"
-        )
-        print("[PASS] Integration: ACCEPT (authoritative in delta)")
+        print("[PASS] Integration: ACCEPT (authoritative_found)")
+    elif summary["discovery_status"] == "authoritative_ambiguous":
+        assert summary["authoritative_stdout_raw_kv"] is None
+        assert lines[1] == "Authoritative output: AMBIGUOUS"
+        print("[PASS] Integration: ACCEPT (authoritative_ambiguous)")
     else:
-        # L-6B: stdout.raw.kv not found in delta set
-        # Contract boundary: brok-run does not search outside delta under Path A
-        # The wrapper MUST print exact warning messages to stderr (L-6B requirement)
-        assert "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)." in result.stderr, (
-            "L-6B: ACCEPT with null authoritative MUST print exact warning line 1 to stderr"
-        )
-        assert "Note: Under Path A, brok-run does not search outside the delta set for authoritative output." in result.stderr, (
-            "L-6B: ACCEPT with null authoritative MUST print exact warning line 2 to stderr"
-        )
-        print("[PASS] Integration: ACCEPT (stdout.raw.kv not in delta, authoritative=null)")
+        assert summary["authoritative_stdout_raw_kv"] is None
+        assert lines[1] == "Authoritative output: NONE"
+        print("[PASS] Integration: ACCEPT (authoritative_not_found)")
 
 
 # =============================================================================

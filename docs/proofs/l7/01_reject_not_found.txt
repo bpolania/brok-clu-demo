@@ -1,0 +1,21 @@
+================================================================================
+L-7 Evidence: REJECT → authoritative_not_found
+================================================================================
+
+Command:
+  ./brok-run "payment succeeded"
+
+Expected Outcome:
+  decision=REJECT, discovery_status=authoritative_not_found
+
+Captured Output:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_b8d345c67ea0ba8b","decision":"REJECT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null,"discovery_status":"authoritative_not_found"}
+Authoritative output: NONE
+
+=================================================================================
+What This Proves:
+  - REJECT decisions have discovery_status='authoritative_not_found'
+  - authoritative_stdout_raw_kv is null (no execution expected)
+  - Disclaimer is printed to stderr
+=================================================================================

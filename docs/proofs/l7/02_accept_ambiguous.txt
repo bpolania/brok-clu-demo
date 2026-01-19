@@ -1,0 +1,22 @@
+================================================================================
+L-7 Evidence: ACCEPT + expanded discovery → authoritative_ambiguous
+================================================================================
+
+Command:
+  ./brok-run "create payment"
+
+Expected Outcome:
+  decision=ACCEPT, discovery_status=authoritative_ambiguous
+  (Multiple stdout.raw.kv files share the same SHA256 due to repeated runs)
+
+Captured Output:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_5b7993293772b6a5","decision":"ACCEPT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null,"discovery_status":"authoritative_ambiguous"}
+Authoritative output: AMBIGUOUS
+
+=================================================================================
+What This Proves:
+  - ACCEPT decisions trigger expanded discovery when delta-only fails
+  - Multiple matching stdout.raw.kv files correctly return AMBIGUOUS
+  - Wrapper refuses to arbitrarily select when ambiguous
+=================================================================================

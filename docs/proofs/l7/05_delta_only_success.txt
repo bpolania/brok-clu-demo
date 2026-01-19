@@ -1,0 +1,37 @@
+================================================================================
+L-7 Evidence: Delta-Only Discovery → authoritative_found (End-to-End)
+================================================================================
+
+Command:
+  ./brok-run "cancel order"
+
+Precondition:
+  The l4_run directory for this input did NOT exist before invocation.
+  When ./brok-run invokes ./brok, a NEW l4_run directory is created with stdout.raw.kv.
+  Delta-only discovery finds this NEW directory in the filesystem delta.
+
+Captured Output:
+Note: This wrapper is non-authoritative. Discovery status does not imply execution truth.
+{"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_3e707cb5d43d","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_3e707cb5d43d/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"3340b28c333b096a473811a8216b80673233918b9ba7a8027fbaa75a7ca9e7e6","discovery_status":"authoritative_found"}
+Authoritative output: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_3e707cb5d43d/stdout.raw.kv
+
+=================================================================================
+What This Proves:
+  - Delta-only discovery CAN return authoritative_found (end-to-end)
+  - When a NEW l4_run directory with stdout.raw.kv is created during ./brok execution,
+    delta-only discovery correctly locates it
+  - The authoritative_stdout_raw_kv path and SHA256 are both populated
+  - This is the L-6 TARGET SUCCESS CASE (delta-only)
+=================================================================================
+
+Reproducibility Note:
+  This test requires the l4_run directory to NOT exist before invocation.
+  Since run_id is deterministic from input content, repeated runs of the same
+  input will not create new directories (they already exist).
+
+  To reproduce:
+    1. Ensure l4_run_run_3e707cb5d43d does NOT exist in artifacts/run/
+    2. Run: ./brok-run "cancel order"
+    3. Observe discovery_status=authoritative_found with populated paths
+
+=================================================================================

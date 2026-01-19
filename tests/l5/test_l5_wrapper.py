@@ -2,7 +2,7 @@
 """
 Phase L-5 Wrapper Tests (Closure-Grade)
 
-Updated for L-6 Path A compliance: delta-only authoritative selection.
+Updated for L-7 compliance: expanded discovery with SHA256 matching.
 
 Verifies:
 1. ./brok remains unchanged (byte-level integrity)
@@ -12,6 +12,7 @@ Verifies:
 5. Paths in JSON exist when not null, sha256 matches when present
 6. Wrapper exit code equals underlying ./brok exit code
 7. Wrapper failure scenarios handled correctly
+8. L-7: discovery_status field present with valid values
 
 All tests are deterministic and require no network access.
 """
@@ -100,10 +101,12 @@ def test_wrapper_rejects_too_many_args():
 
 
 def test_wrapper_accept_produces_json():
-    """Wrapper ACCEPT run produces valid JSON with frozen schema.
+    """Wrapper ACCEPT run produces valid JSON with L-7 schema.
 
-    Path A: authoritative fields may be null if execution dir not in delta.
-    L-6B: When ACCEPT + null authoritative, warning must be printed to stderr.
+    L-7: Includes discovery_status field with values:
+    - "authoritative_found": unique match located
+    - "authoritative_not_found": no match found
+    - "authoritative_ambiguous": multiple candidates, wrapper refuses to select
     """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
@@ -120,31 +123,28 @@ def test_wrapper_accept_produces_json():
     except json.JSONDecodeError as e:
         assert False, f"First line is not valid JSON: {e}"
 
-    # Frozen schema - exactly 4 fields, no extras
-    required_fields = ["run_dir", "decision", "authoritative_stdout_raw_kv", "authoritative_stdout_raw_kv_sha256"]
+    # L-7 schema - exactly 5 fields
+    required_fields = ["run_dir", "decision", "authoritative_stdout_raw_kv", "authoritative_stdout_raw_kv_sha256", "discovery_status"]
     for field in required_fields:
-        assert field in summary, f"Frozen schema requires '{field}'"
-    assert len(summary) == 4, f"Frozen schema has exactly 4 fields, got {len(summary)}: {list(summary.keys())}"
+        assert field in summary, f"L-7 schema requires '{field}'"
+    assert len(summary) == 5, f"L-7 schema has exactly 5 fields, got {len(summary)}: {list(summary.keys())}"
 
     # For ACCEPT: decision must be ACCEPT, run_dir must be non-null
-    # Path A: authoritative fields MAY be null (if execution dir not in delta)
     assert summary["decision"] == "ACCEPT", f"Expected ACCEPT, got {summary['decision']}"
     assert summary["run_dir"] is not None, "ACCEPT must have non-null run_dir"
 
-    # L-6B: Verify warning behavior for ACCEPT + null authoritative
-    if summary["authoritative_stdout_raw_kv"] is None:
-        # Exact warning text required (two lines to stderr)
-        assert "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)." in stderr, (
-            "ACCEPT with null authoritative must print exact warning line 1 to stderr"
-        )
-        assert "Note: Under Path A, brok-run does not search outside the delta set for authoritative output." in stderr, (
-            "ACCEPT with null authoritative must print exact warning line 2 to stderr"
-        )
-    else:
-        # If authoritative is present, no warning expected
-        assert stderr == "", f"No warning expected when authoritative is present, got: {stderr}"
+    # L-7: discovery_status must be valid
+    valid_statuses = ["authoritative_found", "authoritative_not_found", "authoritative_ambiguous"]
+    assert summary["discovery_status"] in valid_statuses, (
+        f"discovery_status must be one of {valid_statuses}, got: {summary['discovery_status']}"
+    )
 
-    print("[PASS] Wrapper ACCEPT produces valid JSON with frozen schema")
+    # L-7: Disclaimer line must be present on stderr
+    assert "This wrapper is non-authoritative" in stderr, (
+        "L-7: Disclaimer line must be present on stderr"
+    )
+
+    print("[PASS] Wrapper ACCEPT produces valid JSON with L-7 schema")
 
 
 def test_wrapper_accept_run_dir_exists():
@@ -214,23 +214,28 @@ def test_wrapper_accept_sha256_valid():
 
 
 def test_wrapper_accept_authoritative_line():
-    """Wrapper line 2 matches authoritative output path.
+    """Wrapper line 2 matches authoritative output status.
 
-    Path A: line 2 is "Authoritative output: NONE" if not in delta.
-    L-6B: When authoritative is NONE for ACCEPT, warning must be on stderr.
+    L-7: Line 2 can be:
+    - "Authoritative output: <path>" if found
+    - "Authoritative output: NONE" if not found
+    - "Authoritative output: AMBIGUOUS" if multiple candidates
     """
     stdout, stderr, exit_code = run_wrapper(["create payment"])
 
     lines = stdout.strip().split('\n')
     assert len(lines) == 2, "Expected exactly 2 lines"
 
-    # Parse JSON to get expected path
+    # Parse JSON to get discovery status
     summary = json.loads(lines[0])
+    discovery_status = summary["discovery_status"]
     expected_path = summary["authoritative_stdout_raw_kv"]
 
-    # Line 2 format depends on whether authoritative is present
-    if expected_path is not None:
+    # Line 2 format depends on discovery status
+    if discovery_status == "authoritative_found":
         expected_line = f"Authoritative output: {expected_path}"
+    elif discovery_status == "authoritative_ambiguous":
+        expected_line = "Authoritative output: AMBIGUOUS"
     else:
         expected_line = "Authoritative output: NONE"
 
@@ -238,17 +243,11 @@ def test_wrapper_accept_authoritative_line():
         f"Line 2 mismatch. Expected: {expected_line}, Got: {lines[1]}"
     )
 
-    # L-6B: Verify warning appears when ACCEPT has null authoritative
-    if expected_path is None:
-        assert "Warning: ACCEPT reported, but no stdout.raw.kv was found in newly created run directories (delta-only discovery)." in stderr, (
-            "ACCEPT with NONE authoritative must have exact warning on stderr"
-        )
-
     print("[PASS] Wrapper prints correct authoritative line for ACCEPT")
 
 
 def test_wrapper_reject_produces_json():
-    """Wrapper REJECT run produces valid JSON with frozen schema."""
+    """Wrapper REJECT run produces valid JSON with L-7 schema."""
     stdout, stderr, exit_code = run_wrapper(["payment succeeded"])
 
     # REJECT should also exit 0 (it's a valid decision)
@@ -260,19 +259,22 @@ def test_wrapper_reject_produces_json():
     # Parse JSON
     summary = json.loads(lines[0])
 
-    # Frozen schema - exactly 4 fields
-    required_fields = ["run_dir", "decision", "authoritative_stdout_raw_kv", "authoritative_stdout_raw_kv_sha256"]
+    # L-7 schema - exactly 5 fields
+    required_fields = ["run_dir", "decision", "authoritative_stdout_raw_kv", "authoritative_stdout_raw_kv_sha256", "discovery_status"]
     for field in required_fields:
-        assert field in summary, f"Frozen schema requires '{field}'"
-    assert len(summary) == 4, f"Frozen schema has exactly 4 fields, got {len(summary)}: {list(summary.keys())}"
+        assert field in summary, f"L-7 schema requires '{field}'"
+    assert len(summary) == 5, f"L-7 schema has exactly 5 fields, got {len(summary)}: {list(summary.keys())}"
 
     # For REJECT: decision is REJECT, run_dir is non-null, authoritative fields are null
     assert summary["decision"] == "REJECT", f"Expected REJECT, got {summary['decision']}"
     assert summary["run_dir"] is not None, "REJECT must have non-null run_dir"
     assert summary["authoritative_stdout_raw_kv"] is None, "REJECT must have null authoritative_stdout_raw_kv"
     assert summary["authoritative_stdout_raw_kv_sha256"] is None, "REJECT must have null sha256"
+    assert summary["discovery_status"] == "authoritative_not_found", (
+        f"REJECT must have discovery_status='authoritative_not_found', got: {summary['discovery_status']}"
+    )
 
-    print("[PASS] Wrapper REJECT produces valid JSON with frozen schema")
+    print("[PASS] Wrapper REJECT produces valid JSON with L-7 schema")
 
 
 def test_wrapper_reject_run_dir_is_delta():
