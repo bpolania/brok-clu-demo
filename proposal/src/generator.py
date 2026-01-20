@@ -8,6 +8,11 @@ Proposals have no authority and do not imply execution outcomes.
 Determinism: Same input always produces byte-for-byte identical output.
 Boundedness: Maximum 8 proposals per input. Input limited to 4096 chars.
 Failure: Invalid/unmapped input produces zero proposals (not fallback).
+
+NOTE: This generator is the DETERMINISTIC engine path.
+Under current build (BOUND_ENGINE_NAME = "llm"), this path is NOT executed.
+L-9 language acceptance expansion is integrated at the LLM engine path ONLY.
+See: src/artifact_layer/llm_engine.py for L-9 integration.
 """
 
 import re
@@ -198,6 +203,8 @@ def generate_proposal_set(input_raw: str) -> dict:
 
     # Normalize for matching (but preserve original in output)
     # Only strip leading/trailing whitespace for pattern matching
+    # NOTE: L-9 language acceptance is NOT applied here.
+    # Under current build, this path is not executed (BOUND_ENGINE_NAME = "llm").
     normalized = input_raw.strip()
 
     # Attempt pattern matching - deterministic order

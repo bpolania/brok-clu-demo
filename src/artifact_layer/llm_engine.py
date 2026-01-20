@@ -18,6 +18,12 @@ Phase L-4 Extension - Stateful Workflow Demonstration:
 This engine recognizes L-4 event tokens and produces STATE_TRANSITION_REQUEST
 proposals. The artifact layer validates these against the frozen state machine.
 
+Phase L-9 Integration - Language Acceptance Expansion:
+This engine applies the L-9 language acceptance contract BEFORE trigger detection.
+Expanded phrases are mapped to canonical forms, enabling recognition of synonyms
+without modifying the trigger patterns. The original input is preserved in the
+proposal set for audit trail purposes.
+
 IMPORTANT: This engine is NON-AUTHORITATIVE.
 
 The AUTHORITATIVE gates are in artifact/src/builder.py:
@@ -52,8 +58,17 @@ import sys
 # Add src to path for L-4 imports
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _SRC_DIR = os.path.dirname(_SCRIPT_DIR)
+_REPO_ROOT = os.path.dirname(_SRC_DIR)
 if _SRC_DIR not in sys.path:
     sys.path.insert(0, _SRC_DIR)
+
+# Add proposal/src to path for L-9 language acceptance contract
+_PROPOSAL_SRC = os.path.join(_REPO_ROOT, 'proposal', 'src')
+if _PROPOSAL_SRC not in sys.path:
+    sys.path.insert(0, _PROPOSAL_SRC)
+
+# Phase L-9: Language Acceptance Contract
+from language_acceptance_contract import normalize_and_map
 
 # Schema version must match proposal layer
 SCHEMA_VERSION = "m1.0"
@@ -204,16 +219,22 @@ def llm_engine(raw_input_bytes: bytes) -> bytes:
         if not input_text or input_text.isspace():
             return _make_proposal_set_bytes(input_text, [])
 
+        # Phase L-9: Apply language acceptance contract
+        # Maps expanded phrases to canonical forms before trigger detection
+        # If no mapping exists, returns input_text unchanged
+        mapped_text = normalize_and_map(input_text)
+
         # Phase L-4: Check for L-4 event trigger first
         # L-4 inputs are mapped to STATE_TRANSITION_REQUEST proposals
+        # Uses mapped_text (after L-9 contract) for trigger detection
         try:
             from l4_state_machine.proposal_mapper import (
                 is_l4_input,
                 map_input_to_event_token,
                 create_l4_proposal
             )
-            if is_l4_input(input_text):
-                event_token = map_input_to_event_token(input_text)
+            if is_l4_input(mapped_text):
+                event_token = map_input_to_event_token(mapped_text)
                 if event_token is not None:
                     proposal = create_l4_proposal(event_token)
                     return _make_proposal_set_bytes(input_text, [proposal])
@@ -223,13 +244,15 @@ def llm_engine(raw_input_bytes: bytes) -> bytes:
 
         # Phase L-3: Demo trigger check (PROPOSAL GENERATOR CONVENIENCE)
         # This controls which proposal the engine emits, not the decision
-        if _is_demo_trigger(input_text):
+        # Uses mapped_text (after L-9 contract) for trigger detection
+        if _is_demo_trigger(mapped_text):
             # Produce the L-3 envelope proposal for demo purposes
             return _make_proposal_set_bytes(input_text, [L3_DEMO_ENVELOPE])
 
         # All other inputs: generate unmapped proposal (nondeterministic via nonce)
         # The proposal has valid structure but unmapped field values
         # This guarantees REJECT (INVALID_PROPOSALS) under frozen rules
+        # Note: mapped_text was used for trigger checks; input_text preserved for audit
         proposal = _generate_unmapped_proposal()
 
         return _make_proposal_set_bytes(input_text, [proposal])

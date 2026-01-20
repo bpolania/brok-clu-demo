@@ -1,0 +1,126 @@
+Phase L-9 Authoritative Evidence: stdout.raw.kv Hash Equivalence
+================================================================
+
+Generated: 2026-01-20 00:01:31 UTC
+Repository: /Users/bpolania/Documents/GitHub/brok-clu-demo
+Strategy: Fresh run environment (Strategy 2: Move-aside quarantine)
+Quarantine ID: evidence_20260119_160130_50419
+
+================================================================================
+CLOSURE REQUIREMENTS
+================================================================================
+
+- All run directories MUST be NEW (created during this evidence run)
+- JSON-parsed output from ./brok-run (no grep on human text)
+- No wildcard hashing
+- REJECT must have decision=REJECT and no stdout.raw.kv
+
+================================================================================
+EVIDENCE RUNS (5 total)
+================================================================================
+
+--- Run 1: canonical ---
+input: "create payment"
+command: ./brok-run "create payment"
+json: {"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_071c64b5f425","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_071c64b5f425/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288","discovery_status":"authoritative_found"}
+run_dir: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_071c64b5f425
+new_run_dir: true
+decision: ACCEPT
+expected_decision: ACCEPT
+stdout_raw_kv_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_071c64b5f425/stdout.raw.kv
+sha256: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+--- Run 2: expanded_submit ---
+input: "submit payment"
+command: ./brok-run "submit payment"
+json: {"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2cb11c0da066","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2cb11c0da066/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288","discovery_status":"authoritative_found"}
+run_dir: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2cb11c0da066
+new_run_dir: true
+decision: ACCEPT
+expected_decision: ACCEPT
+stdout_raw_kv_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2cb11c0da066/stdout.raw.kv
+sha256: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+--- Run 3: expanded_new ---
+input: "new payment"
+command: ./brok-run "new payment"
+json: {"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_c7ebd3635185","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_c7ebd3635185/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288","discovery_status":"authoritative_found"}
+run_dir: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_c7ebd3635185
+new_run_dir: true
+decision: ACCEPT
+expected_decision: ACCEPT
+stdout_raw_kv_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_c7ebd3635185/stdout.raw.kv
+sha256: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+--- Run 4: expanded_make_a ---
+input: "make a payment"
+command: ./brok-run "make a payment"
+json: {"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2fe49e881390","decision":"ACCEPT","authoritative_stdout_raw_kv":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2fe49e881390/stdout.raw.kv","authoritative_stdout_raw_kv_sha256":"382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288","discovery_status":"authoritative_found"}
+run_dir: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2fe49e881390
+new_run_dir: true
+decision: ACCEPT
+expected_decision: ACCEPT
+stdout_raw_kv_path: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/l4_run_run_2fe49e881390/stdout.raw.kv
+sha256: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+--- Run 5: reject ---
+input: "payment"
+command: ./brok-run "payment"
+json: {"run_dir":"/Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_97a2ef1c9c3d90f7","decision":"REJECT","authoritative_stdout_raw_kv":null,"authoritative_stdout_raw_kv_sha256":null,"discovery_status":"authoritative_not_found"}
+run_dir: /Users/bpolania/Documents/GitHub/brok-clu-demo/artifacts/run/m4_97a2ef1c9c3d90f7
+new_run_dir: true
+decision: REJECT
+expected_decision: REJECT
+stdout_raw_kv_path: N/A
+sha256: N/A
+
+================================================================================
+VERIFICATION RESULTS
+================================================================================
+
+ACCEPT_HASHES_ALL_EQUAL: true
+  canonical:       382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+  expanded_submit: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+  expanded_new:    382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+  expanded_make_a: 382dc31811e5097c64f0de4909e1c4a2248fd93ff1b1e8d5e2ddeaebe3af0288
+
+REJECT_STDOUT_RAW_KV_PRESENT: false
+  (Must be false for closure)
+
+ALL_RUN_DIRS_NEW: true
+  (Must be true for closure - no reuse allowed)
+
+OVERALL_PASS: true
+  (Must be true for closure evidence)
+
+================================================================================
+CONCLUSION
+================================================================================
+
+L-9 language acceptance contract closure evidence:
+- 4 ACCEPT inputs (canonical + 3 synonyms) produce byte-identical stdout.raw.kv
+- 1 REJECT input produces decision=REJECT with no stdout.raw.kv
+- All 5 run directories were NEW (created during this evidence run)
+- No wildcards used in hash computation
+
+Closure status: CLOSED
+
+================================================================================
+REPRODUCTION COMMANDS
+================================================================================
+
+# To reproduce this evidence:
+# 1. Run the evidence script (it will quarantine existing runs automatically)
+./artifacts/evidence/l9/generate_evidence.sh
+
+# The script:
+# - Quarantines existing artifacts/run to artifacts/run.__l9_quarantine__/
+# - Creates fresh empty artifacts/run
+# - Runs 5 inputs via ./brok-run
+# - Parses JSON output to extract run_dir and decision
+# - Verifies all run_dirs are NEW (not reused)
+# - Computes sha256 only for captured stdout.raw.kv paths (no wildcards)
+# - Restores original artifacts/run on exit
+
+# NOTE: rerun/reuse is FORBIDDEN for closure evidence.
+# The script FAILS if any run_dir existed before the evidence run.
