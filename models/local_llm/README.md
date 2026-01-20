@@ -22,11 +22,21 @@ This path is **hard-coded** and **non-configurable**.
 
 ## Model Format
 
-The vendored model must be compatible with `llama-cpp-python` (GGUF format). The file extension is `.bin` but the content is a GGUF model.
+The vendored model is a GGUF file compatible with `llama-cpp-python`. The file extension is `.bin` but the content is GGUF format.
 
-## Current State
+## Model Attribution
 
-The current `model.bin` is a **placeholder stub** that will cause `llama_cpp.Llama` to fail loading. This triggers the correct collapse-to-empty behavior. A real GGUF model will be vendored in a subsequent phase.
+| Property | Value |
+|----------|-------|
+| File | `model.bin` |
+| Format | GGUF v3 |
+| Architecture | controlvector |
+| Source | Vendored from brok-llm-proposals Phase 9 artifacts |
+| Original file | `happy.gguf` |
+| Size | 509,440 bytes |
+| License | Model weights for demo/testing purposes only |
+
+**Note**: This is a minimal control vector model used for Phase L-10 demonstration. It is not a production language model.
 
 ## Invariants
 

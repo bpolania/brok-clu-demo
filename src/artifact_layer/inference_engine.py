@@ -92,10 +92,14 @@ def _get_llm():
     Model path is: models/local_llm/model.bin (hard-coded, non-configurable)
     See _get_model_path() for path resolution.
 
-    ACTIVATION STATUS:
-    Model loading is NOT YET ACTIVATED in this prompt.
-    This function currently returns None, causing collapse to empty bytes.
-    Activation will occur in a subsequent L-10 prompt.
+    LOAD ATTEMPT BEHAVIOR (Phase L-10 Prompt 1):
+    This function attempts to load the model from the fixed path.
+    - On ImportError (llama_cpp not installed): returns None
+    - On any load failure (file missing, unreadable, invalid): returns None
+    - On success: returns None for Prompt 1 (activation deferred to Prompt 2)
+
+    The load attempt is exercised to prove collapse behavior on failures.
+    Proposal generation remains non-activated in Prompt 1.
 
     STATE ISOLATION:
     - Load is attempted whenever _llm_instance is None
@@ -115,20 +119,34 @@ def _get_llm():
     try:
         # Import llama_cpp here to allow the module to load even if
         # llama-cpp-python is not installed (for tests that mock)
-        from llama_cpp import Llama  # noqa: F401
+        from llama_cpp import Llama
 
-        # PHASE L-10 PROMPT 1: Path constant established but NOT ACTIVATED
-        # The fixed model path is: models/local_llm/model.bin
-        # Actual model loading will be activated in a subsequent prompt.
-        # For now, return None to maintain collapse-to-empty behavior.
-        # model_path = _get_model_path()  # Available but not used yet
+        # Get the fixed model path (hard-coded, non-configurable)
+        model_path = _get_model_path()
+
+        # Attempt to load the model from the fixed path
+        # This exercises the load path to prove collapse behavior on failures
+        # Hard-coded parameters only - no configuration surface
+        _llm_instance = Llama(
+            model_path=str(model_path),
+            n_ctx=256,
+            n_threads=2,
+            verbose=False
+        )
+
+        # PHASE L-10 PROMPT 1: Load attempt succeeded, but activation deferred
+        # For Prompt 1, we discard the loaded instance and return None
+        # to keep proposal generation non-activated.
+        # Prompt 2 will change this to return the loaded instance.
+        _llm_instance = None
         return None
 
     except ImportError:
         # llama-cpp-python not installed - collapse to empty
         return None
     except Exception:
-        # Any other failure - collapse to empty
+        # Any load failure (file missing, unreadable, invalid, etc.)
+        # collapses to empty bytes silently - no warnings, no logs
         return None
 
 
