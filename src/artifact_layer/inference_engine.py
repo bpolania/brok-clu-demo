@@ -10,10 +10,11 @@ CONTRACT:
 - Execution: exactly one inference call per invocation
 - Failure semantics: any failure collapses to empty bytes, silently
 
-NO MODEL PATH CONTRACT:
-This module does NOT define or assume any model file location.
-Per Phase L-10 Prompt 2D Pattern A, model-path discovery is removed entirely.
-If no LLM is available, the engine collapses to empty bytes.
+VENDORED MODEL CONTRACT (Phase L-10 Prompt 1):
+- Fixed path: models/local_llm/model.bin (hard-coded, non-configurable)
+- No env vars, CLI flags, or config files can override this path
+- Missing/invalid model collapses to empty bytes silently
+- No download or fallback attempts
 
 INPUT TRANSPORT (BASE64 ENCODING):
 raw_input_bytes are transported to the LLM via base64 encoding:
@@ -33,10 +34,41 @@ All failure modes collapse to empty bytes.
 
 AUTHORIZATION:
 Vendored from brok-llm-proposals under explicit Phase L-10 Prompt 2C
-authorization. Model path discovery removed per Prompt 2D.
+authorization. Fixed-path contract established per Prompt 1.
 """
 
 import base64
+from pathlib import Path
+
+# =============================================================================
+# FIXED-PATH MODEL CONTRACT (Phase L-10 Prompt 1)
+# =============================================================================
+
+# Hard-coded model path - NO CONFIGURATION SURFACE
+# This path is relative to the repository root.
+# NO env vars, CLI flags, or config files can override this.
+_MODEL_RELATIVE_PATH: str = "models/local_llm/model.bin"
+
+
+def _get_model_path() -> Path:
+    """
+    Get the fixed model path.
+
+    FIXED-PATH CONTRACT:
+    - Path is hard-coded as models/local_llm/model.bin
+    - No configuration surface (no env/CLI/config override)
+    - Path is resolved relative to repository root
+
+    Returns:
+        Absolute path to the vendored model file.
+    """
+    # Resolve repository root from this module's location
+    # This file is at: src/artifact_layer/inference_engine.py
+    # Repository root is two directories up
+    module_dir = Path(__file__).parent
+    repo_root = module_dir.parent.parent
+    return repo_root / _MODEL_RELATIVE_PATH
+
 
 # Maximum proposal bytes (1MB bound)
 MAX_PROPOSAL_BYTES: int = 1048576
@@ -56,10 +88,14 @@ def _get_llm():
     """
     Get the LLM instance, loading it lazily on first use.
 
-    NO MODEL PATH CONTRACT:
-    This function does NOT define any model file location.
-    It attempts to use llama-cpp-python if available, but does not
-    specify where models should be located.
+    FIXED-PATH CONTRACT (Phase L-10 Prompt 1):
+    Model path is: models/local_llm/model.bin (hard-coded, non-configurable)
+    See _get_model_path() for path resolution.
+
+    ACTIVATION STATUS:
+    Model loading is NOT YET ACTIVATED in this prompt.
+    This function currently returns None, causing collapse to empty bytes.
+    Activation will occur in a subsequent L-10 prompt.
 
     STATE ISOLATION:
     - Load is attempted whenever _llm_instance is None
@@ -81,12 +117,11 @@ def _get_llm():
         # llama-cpp-python is not installed (for tests that mock)
         from llama_cpp import Llama  # noqa: F401
 
-        # NO MODEL PATH CONTRACT:
-        # We do not define or assume any model file location.
-        # Without a model path, we cannot instantiate Llama.
-        # This is intentional per L-10 Prompt 2D Pattern A.
-        # If a pre-initialized LLM handle were injected externally,
-        # it would be used here. Since none exists, return None.
+        # PHASE L-10 PROMPT 1: Path constant established but NOT ACTIVATED
+        # The fixed model path is: models/local_llm/model.bin
+        # Actual model loading will be activated in a subsequent prompt.
+        # For now, return None to maintain collapse-to-empty behavior.
+        # model_path = _get_model_path()  # Available but not used yet
         return None
 
     except ImportError:

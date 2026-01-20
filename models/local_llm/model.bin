@@ -1,0 +1,4 @@
+# Phase L-10 Model Stub
+# This file is a placeholder that will be replaced with a real GGUF model.
+# When llama_cpp.Llama attempts to load this, it will fail and collapse to empty bytes.
+# This is the expected behavior per L-10 contract.
