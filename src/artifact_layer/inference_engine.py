@@ -92,14 +92,16 @@ def _get_llm():
     Model path is: models/local_llm/model.bin (hard-coded, non-configurable)
     See _get_model_path() for path resolution.
 
-    LOAD ATTEMPT BEHAVIOR (Phase L-10 Prompt 1):
-    This function attempts to load the model from the fixed path.
+    LOAD BEHAVIOR (Phase L-10 Prompt 1):
+    This function attempts to load the model from the fixed path to exercise
+    the load path and prove collapse behavior on failures.
     - On ImportError (llama_cpp not installed): returns None
     - On any load failure (file missing, unreadable, invalid): returns None
-    - On success: returns None for Prompt 1 (activation deferred to Prompt 2)
+    - On success: returns None (inference not wired in Prompt 1)
 
-    The load attempt is exercised to prove collapse behavior on failures.
-    Proposal generation remains non-activated in Prompt 1.
+    Prompt 1 establishes load capability proof without wiring inference.
+    The return value will be changed in a future prompt to return the
+    loaded instance when inference is wired.
 
     STATE ISOLATION:
     - Load is attempted whenever _llm_instance is None
@@ -107,7 +109,7 @@ def _get_llm():
     - If load fails, returns None (collapses to empty bytes)
     - Next invocation will attempt load again if _llm_instance is still None
 
-    Returns None if LLM is not available (which collapses to empty bytes).
+    Returns None (inference not wired in Prompt 1).
     """
     global _llm_instance
 
@@ -134,10 +136,9 @@ def _get_llm():
             verbose=False
         )
 
-        # PHASE L-10 PROMPT 1: Load attempt succeeded, but activation deferred
-        # For Prompt 1, we discard the loaded instance and return None
-        # to keep proposal generation non-activated.
-        # Prompt 2 will change this to return the loaded instance.
+        # Load succeeded - inference not wired in Prompt 1
+        # Discard the instance to match pre-Prompt-1 runtime behavior
+        # where _get_llm() always returned None (no model path existed)
         _llm_instance = None
         return None
 
